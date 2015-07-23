@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Fantasy Basketball Sim 3v3</title>
+    <!-- <link rel="stylesheet" href="style.css"> -->
+    <script src="https://cdn.firebase.com/js/client/2.2.7/firebase.js"></script>
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="basketlogic.js"></script>
+</head>
+    <body>
+        <!-- USER LOGIN IN FORM -->
+        <form name="loginForm" onsubmit = "go();return false;" accept-charset="utf-8">
+            <ul>
+                <li><label for="userNameInput">Username</label>
+                <input type="text" id="userNameInput" placeholder="Type your user name here..." required></li>
+                <li><label for="passwordInput">Password</label>
+                <input type="password" id="passwordInput" placeholder="Type your password here..." required></li>
+                <li>
+                <input type="submit" value="Login"></li>
+            </ul>
+        </form>
+    </body>
+</html>
+
