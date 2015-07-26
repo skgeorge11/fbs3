@@ -27,12 +27,12 @@ function go() {
 function tryCreateUser(userId, userData) {
   fireRef.child('userArray').child(userId).transaction(function(currentData) {
   if (currentData === null) {
-    return (userId);
+    return (userData);
   } else {
     alert('User name already exists. Please choose a different user name.');
     return; // Abort the transaction.
   }
-}, window.location.href = "fbs3.html"
+}, window.location.assign("fbs3.html")
     // function(error, committed, snapshot) {
     //    if (error) {
     //     console.log('Transaction failed abnormally!', error);
@@ -82,4 +82,61 @@ function addPlayer(){
   var contractId = $('#playerContractInput').val();
   teamRef.child(teamId).child(playerId).set({injury:"true"});
   playerRef.child(playerId).set({"height":heightId, "contract":{amount:contractId}});
+}
+
+function simGames(){
+// determine day of season
+// getTeamMatchups - begin matchup loop
+// get team 1 roster - pull from team array - check injury
+// get team 2 roster
+// start game loop
+
+// post stats to matchup
+// post stats to players
+// back to matchup loop
+// end
+var currentLeague = 1;
+var currentYear = 0;
+var currentDay = 0;
+
+//CREATE DEFFERED LEAGUE DATA
+function leaguePromiseData(){
+  var leagueDeferred = $.Deferred();
+  fireRef.child("leagueArray").child(currentLeague).once('value',
+  function (snap) {leagueDeferred.resolve(snap);});
+  return leagueDeferred.promise();
+}
+var leaguePromise = leaguePromiseData();
+
+function dayPromiseData(){
+  var dayDeferred = $.Deferred();
+  seasonRef.child(currentLeague).child(currentYear).child(currentDay).once('value',
+  function (snapTwo) {dayDeferred.resolve(snapTwo);});
+  return dayDeferred.promise();
+}
+// GET LEAGUE, YEAR, day
+leaguePromise.done(function(snap){
+  currentYear  = snap.child("year").val();
+  console.log(currentYear);
+  currentDay = snap.child("day").val();
+  console.log("currently day "+currentDay);
+  // FIND MATCHUPS
+  var dayPromise = dayPromiseData();
+  dayPromise.done(function(snapTwo){
+    console.log(snapTwo.val());
+    snapTwo.forEach(function(childSnap) {
+      var firstTeam = childSnap.key();
+      var secondTeam = childSnap.val();
+      console.log("the two teams are "+firstTeam+secondTeam);
+      }
+    );
+    }
+  );
+}
+);
+
+
+
+
+
 }

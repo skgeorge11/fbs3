@@ -1,0 +1,48 @@
+{
+  "leagueArray" : [ null, {
+    "teams" : {
+      "Girrafes" : "user",
+      "Zebras" : "computer"
+    },
+    "week" : 1,
+    "year" : 2016
+  }, "lame" ],
+  "playerArray" : {
+    "Pimple" : {
+      "contract" : {
+        "amount" : "3"
+      },
+      "height" : "76"
+    },
+    "Seth" : {
+      "contract" : {
+        "amount" : 2
+      },
+      "height" : 80
+    }
+  },
+  "seasonArray" : [ null, {
+    "2016" : [ null, {
+      "Giraffes" : "Zebras"
+    } ]
+  } ],
+  "teamArray" : {
+    "Giraffes" : {
+      "Seth" : {
+        "injury" : true
+      }
+    },
+    "Zebras" : {
+      "Pimple" : {
+        "injury" : "true"
+      }
+    }
+  },
+  "userArray" : {
+    "seth" : {
+      "league" : 1,
+      "password" : "pass",
+      "team" : "Giraffes"
+    }
+  }
+}
