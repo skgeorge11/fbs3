@@ -20,6 +20,10 @@
 </head>
     <body>
         <a href="/fbs3/fbs3.html">Home</a>
-        <input type="button" value="Sim Games" onclick="simGames()">
+        <form name="leagueInputForm" onsubmit = "simGames();return false;" accept-charset="utf-8">
+                <li><label for="leagueInput">League</label>
+                <input type="text" id="leagueInput" placeholder="Type your league name here..." required></li>
+                <input type="submit" value="Sim Games">
+        </form>
     </body>
 </html>

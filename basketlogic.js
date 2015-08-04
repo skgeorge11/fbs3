@@ -1,10 +1,24 @@
 $(document).ready(console.log("JQuery ready"));
 // CREATE A REFERENCE TO FIREBASE
 var fireRef = new Firebase("https://fbs3.firebaseio.com/");
-var playerRef = new Firebase("https://fbs3.firebaseio.com/playerArray/");
-var teamRef = new Firebase("https://fbs3.firebaseio.com/teamArray/");
-var userRef = new Firebase("https://fbs3.firebaseio.com/userArray/");
-var seasonRef  = new Firebase("https://fbs3.firebaseio.com/seasonArray/");
+var userId = localStorage.localUserId;
+var userPassword;
+//var userLeaguePromise = userPromiseData();
+var userTeam;
+
+function userPromiseData(){
+  var userDeferred = $.Deferred();
+  fireRef.child('userArray').child(userId).once('value',
+    function (snap) {
+      var snapPassVal = snap.child("password").val();
+      if(snapPassVal === userPassword){
+          userDeferred.resolve(snap.child("league").val());
+          userTeam = snap.child("team").val();
+      }
+    });
+  console.log("userPromiseData ran: "+userId);
+  return userDeferred.promise();
+}
 
 
 //CHECK FOR LOCAL STORAGE
@@ -17,71 +31,77 @@ if(typeof(Storage) !== "undefined") {
 
 //CHECK FOR USER DUPLICATION/ SIGN IN
 function go() {
-  var userId = $('#userNameInput');
-  var userPassword = $('#passwordInput');
+  userId = $('#userNameInput');
+  userPassword = $('#passwordInput');
   tryCreateUser(userId.val(), userPassword.val());
 }
-
-// Tries to set /users/<userId> to the specified data, but only
-// if there's no data there already.
+// Tries to set /users/<userId> to the specified data
 function tryCreateUser(userId, userData) {
-  fireRef.child('userArray').child(userId).transaction(function(currentData) {
-  if (currentData === null) {
-    return (userData);
-  } else {
-    alert('User name already exists. Please choose a different user name.');
-    return; // Abort the transaction.
-  }
-}, window.location.assign("fbs3.html")
-    // function(error, committed, snapshot) {
-    //    if (error) {
-    //     console.log('Transaction failed abnormally!', error);
-    //   } else if (!committed) {
-    //     console.log('We aborted the transaction (because wilma already exists).');
-    //   } else {
-    //     console.log('User wilma added!');
-    //   }
-    // }
-    );
+  //var userDeferred = $.Deferred();
+  fireRef.child('userArray').child(userId).once('value',
+    function (snap) {
+      var snapVal = snap.val();
+      var snapPassVal = snap.child("password").val();
+      if (snapPassVal != null) {
+        console.log("user already exists.")
+        if(snapPassVal === userData){
+          console.log("password matches");
+          localStorage.localUserId = userId;
+          localStorage.localUserPassword = userData;
+          window.location.assign("fbs3.html");
+        } else {
+          alert("password doesn't match");
+        }
+      } else {
+        console.log("user snap is undefined.")
+        fireRef.child('userArray').child(userId).set({password : userData});
+        window.location.assign("fbs3.html");
+      }
+  });
+}
+
+function teamSnapshotFunction (tempLeague, tempTeam){
+  var teamDeferred = $.Deferred();
+  fireRef.child("leagueArray").child(tempLeague).child("teamArray").child(tempTeam).once('value', function (snap){
+    teamDeferred.resolve(snap);
+  });
+  return teamDeferred.promise();
 }
 
 //FILL TEAM INFO PAGE
 function teamGlanceFill(teamName){
+    console.log ("teamGlanceFill initiated: " +userLeaguePromise);
     var playerInfo;
     var playerPoint;
-    teamRef.child(teamName).once('value', function (snapshot) {
-        // The callback function will get called twice, once for "fred" and once for "barney"
-        snapshot.forEach(function(childSnapshot) {
-          // key will be "fred" the first time and "barney" the second time
-          var childKey = childSnapshot.key();
-          console.log(childKey);
-          // childData will be the actual contents of the child
-          var childData = childSnapshot.val();
-          console.log(childData);
-          playerRef.child(childKey).once('value', function (snapshot2){
-            playerPoint = snapshot2.val();
-            console.log(playerPoint.height);
-            $('#tdOneName').text(snapshot2.key());
-            $('#tdOneHeight').text(playerPoint.height + " inches");
-            $('#tdOneContract').text(playerPoint.contract.amount);
-          }, function (err) {
-          console.log("team glance failed to find player list.");
-          });
-        });
-      }, function (err) {
-        console.log("team glance failed to find player list.");
-    });
-
+    var userLeaguePromise = userPromiseData();
+    console.log("pending leaguePromise: " + userLeaguePromise);
+    userLeaguePromise.done(function(n){
+      console.log("leaguePromise ran");
+      // var teamSnapshot = teamSnapshotFunction(userLeaguePromise,userTeam);
+      // teamSnapshot.done(function(snap){
+      //   console.log("teamPromise ran: ");
+      //   // The callback function will get called twice, once for each child
+      //   snap.forEach(function(childSnap) {
+      //     console.log("for each child")
+      //     // childData will be the actual contents of the child
+      //     $('#tdName1').text(childSnap.key());
+      //     $('#tdHeight1').text(childSnap.height.val() + " inches");
+      //     $('#tdContract1').text(childSnap.contract.amount.val());
+      //   });
+      // });
+    }).fail(function () {
+            console.log("failed leaguePromise");
+      });
 }
 
 function addPlayer(){
+  var currentLeague = $('#leagueName').val();
   console.log("run add player");
   var teamId = $('#playerTeamInput').val();
   var playerId = $('#playerNameInput').val();
   var heightId = $('#playerHeightInput').val();
   var contractId = $('#playerContractInput').val();
-  teamRef.child(teamId).child(playerId).set({injury:"true"});
-  playerRef.child(playerId).set({"height":heightId, "contract":{amount:contractId}});
+  fireRef.child("leagueArray").child(currentLeague).child(teamId).child(playerId).set({injury:"true", height : heightId, contract: {amount:contractId}});
 }
 
 function simGames(){
@@ -95,9 +115,12 @@ function simGames(){
 // post stats to players
 // back to matchup loop
 // end
-var currentLeague = 1;
+var currentLeague = $('#leagueInput').val();
+console.log(currentLeague);
 var currentYear = 0;
 var currentDay = 0;
+var firstTeam = "0";
+var secondTeam = "0";
 
 //CREATE DEFFERED LEAGUE DATA
 function leaguePromiseData(){
@@ -108,35 +131,30 @@ function leaguePromiseData(){
 }
 var leaguePromise = leaguePromiseData();
 
-function dayPromiseData(){
-  var dayDeferred = $.Deferred();
-  seasonRef.child(currentLeague).child(currentYear).child(currentDay).once('value',
-  function (snapTwo) {dayDeferred.resolve(snapTwo);});
-  return dayDeferred.promise();
-}
 // GET LEAGUE, YEAR, day
-leaguePromise.done(function(snap){
-  currentYear  = snap.child("year").val();
+leaguePromise.done(function(league){
+  currentYear  = league.child("year").val();
   console.log(currentYear);
-  currentDay = snap.child("day").val();
-  console.log("currently day "+currentDay);
+  currentDate = league.child("currentDay").val();
+  console.log("currently day "+currentDate);
   // FIND MATCHUPS
-  var dayPromise = dayPromiseData();
-  dayPromise.done(function(snapTwo){
-    console.log(snapTwo.val());
-    snapTwo.forEach(function(childSnap) {
-      var firstTeam = childSnap.key();
-      var secondTeam = childSnap.val();
-      console.log("the two teams are "+firstTeam+secondTeam);
-      }
-    );
-    }
-  );
-}
-);
+  league.child("day"+currentDate).forEach(function(teamMatch) {
+      console.log(teamMatch.key());//child("match1").child("Giraffes").val()
+      teamMatch.forEach(function(teamName) {
+          console.log("ran teamName child");
+          firstTeam = teamName.key();
+          secondTeam = teamName.val();
+      });
 
+    console.log("the two teams are "+firstTeam+secondTeam);
 
+      // league.child(firstTeam).forEach(function(childLeague){
 
+      // });
+
+    });
+
+  });
 
 
 }

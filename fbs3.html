@@ -41,9 +41,9 @@ table#t01 th    {
                 <th>Contract</th>
             </tr>
             <tr>
-                    <td id="tdOneName">Jill</td>
-                    <td id="tdOneHeight">Smith</td>
-                    <td id="tdOneContract">50</td>
+                    <td id="tdName1">Jill</td>
+                    <td id="tdHeight1">Smith</td>
+                    <td id="tdContract1">50</td>
             </tr>
             <tr>
                     <td>Eve</td>
@@ -57,11 +57,13 @@ table#t01 th    {
             </tr>
         </table>
 
-        <script type="text/javascript">teamGlanceFill("Giraffes");</script>
+        <script type="text/javascript">teamGlanceFill();</script>
 
         <h1>Add new player</h1>
         <form name="addPlayerForm" onsubmit = "addPlayer();return false;" accept-charset="utf-8">
             <ul>
+                <li><label for="leagueName">League</label>
+                <input type="text" id="leagueName" placeholder="Type your league name here..." required></li>
                 <li><label for="playerTeamInput">Team</label>
                 <input type="text" id="playerTeamInput" placeholder="Type your user name here..." required></li>
                 <li><label for="playerNameInput">Name</label>
