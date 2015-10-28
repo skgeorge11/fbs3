@@ -15,7 +15,7 @@ h1{
     position: absolute;
     left:14vw;
     top:0px;
-    background: navy;
+    background: grey;
     width: 70vw;
     padding: 2px;
     min-height:5px;
@@ -51,7 +51,7 @@ h1{
 }
 .sideBanner {
     /*background-image: url("./assets/sidebarheader.jpg");*/
-    background-color: navy;
+    background-color: black;
     background-size: cover;
     background-repeat: no-repeat;
     display: inline;
@@ -76,6 +76,21 @@ h1{
 #rightBanner {
     position: fixed;
     right: 0px;
+}
+.playerContain{
+    position:relative;
+    top:20vh;
+    max-width: 100%;
+}
+.halfImage{
+    display:inline-block;
+    width: 49.5%;
+}
+#buttonContain{
+    display: none;
+}
+#teamContain{
+    display:none;
 }
 table {
     width:100%;

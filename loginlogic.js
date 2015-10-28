@@ -44,16 +44,19 @@ function userPromiseData(user){
 }
 //USERID AND PASSWORD INFO IS CHECKED AGAINST FIREBASE
 function checkPassword(origin){
+  console.log("user id is: "+userId);
   var userIdPromise = userPromiseData(userId);
-  userIdPromise.fail(function(){
-    console.log("userId did not exist on firebase.");
-    if (origin === "createUser"){
-      console.log("created new user.")
-      fireRef.child('userArray').child(userId).set({password : userData});
-      window.location.assign("fbs3.html");
-    }
-  });
   userIdPromise.done(function(userSnap){
+    if(!userSnap.child("password").val()){
+      console.log("userId did not exist on firebase.");
+      if (origin === "createUser"){
+        console.log("created new user.")
+        fireRef.child('userArray').child(userId).set({password : userPassword});
+        localStorage.localUserId = userId;
+        localStorage.localUserPassword = userPassword;
+        window.location.assign("fbs3.html");
+      }
+    }
     if (userPassword == userSnap.child("password").val()){
       userArrayComplete = userSnap;
       console.log("userArrayComplete: " + userArrayComplete.key());
@@ -82,6 +85,5 @@ function go() {
 function resetUser(){
   localStorage.localUserId = null;
   localStorage.localUserPassword = null;
-  localStorage.localLeagueArray = null;
   console.log("reset local storage. userID now: " + localStorage.localUserId);
 }

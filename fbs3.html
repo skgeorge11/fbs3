@@ -13,36 +13,42 @@
         <div class="sideBanner" id="leftBanner"></div>
         <div class="navContain"></div>
         <div class="centerContain">
-            <p>Your team:
-            <br>
-            <table id="teamGlance">
-                <tr>
-                    <th>Name</th>
-                    <th>Height</th>
-                    <th>Contract</th>
-                </tr>
-            </table>
-            <script type="text/javascript">teamGlanceCheck();</script>
+            <div class ="playerContain" id="buttonContain">
+                <a href="index.html"><img class="halfImage" src="./assets/loginbutton.png"></a>
+                <a href="fbs3.html" onclick="joinLeague(); return false;">
+                    <img class="halfImage" src="./assets/newbutton.png">
+                </a>
+            </div >
+            <div class = "playerContain" id="teamContain">
+                <table id="teamGlance">
+                    <tr>
+                        <th>Name</th>
+                        <th>Height</th>
+                        <th>Contract</th>
+                    </tr>
+                </table>
+                <script type="text/javascript">teamGlanceCheck();</script>
+                <br><br>
+                <h1>Add new player</h1>
+                <form name="addPlayerForm" onsubmit = "addPlayer("form");return false;" accept-charset="utf-8">
+                    <ul>
+                        <li><label for="leagueName">League</label>
+                        <input type="text" id="leagueName" value="alphaLeague" required></li>
+                        <li><label for="playerTeamInput">Team</label>
+                        <input type="text" id="playerTeamInput" value="Giraffes" required></li>
+                        <li><label for="playerNameInput">Name</label>
+                        <input type="text" id="playerNameInput" placeholder="Type your password here..." required></li>
+                        <li><label for="playerHeightInput">Height</label>
+                        <input type="number" min="70" max="86" id="playerHeightInput" placeholder="Type your user name here..." required></li>
+                        <li><label for="playerContractInput">Contract</label>
+                        <input type="number" id="playerContractInput" placeholder="Type your password here..." required></li>
+                        <li>
+                        <input type="submit" value="Create"></li>
+                    </ul>
+                </form>
+            </div>
             <br><br>
-            <h1>Add new player</h1>
-            <form name="addPlayerForm" onsubmit = "addPlayer("form");return false;" accept-charset="utf-8">
-                <ul>
-                    <li><label for="leagueName">League</label>
-                    <input type="text" id="leagueName" value="alphaLeague" required></li>
-                    <li><label for="playerTeamInput">Team</label>
-                    <input type="text" id="playerTeamInput" value="Giraffes" required></li>
-                    <li><label for="playerNameInput">Name</label>
-                    <input type="text" id="playerNameInput" placeholder="Type your password here..." required></li>
-                    <li><label for="playerHeightInput">Height</label>
-                    <input type="number" min="70" max="86" id="playerHeightInput" placeholder="Type your user name here..." required></li>
-                    <li><label for="playerContractInput">Contract</label>
-                    <input type="number" id="playerContractInput" placeholder="Type your password here..." required></li>
-                    <li>
-                    <input type="submit" value="Create"></li>
-                </ul>
-            </form>
-            <br><br>
-            <a href="index.html">Home</a>
+            <a href="index.html">Login</a>
             <a href="./assets/sim/sim1.html">Sim</a>
         </div>
         <div class="sideBanner" id="rightBanner"></div>

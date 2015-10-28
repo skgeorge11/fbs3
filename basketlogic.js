@@ -19,7 +19,6 @@ if(typeof(Storage) !== "undefined") {
     // Code for localStorage/sessionStorage.
     userId = localStorage.localUserId;
     userPassword = localStorage.localUserPassword;
-    leagueArrayComplete = localStorage.localLeagueArray;
     console.log("user variables taken from localStorage: "+userId);
 } else {
     console.log ("Sorry! No Web Storage support..");
@@ -27,6 +26,10 @@ if(typeof(Storage) !== "undefined") {
 if (Cookies.get('userArrayCookie') != null) {
     userArrayComplete = Cookies.get('userArrayCookie');
     console.log("got user cookie: "+userArrayComplete);
+}
+if (Cookies.get('leagueArrayCookie') != null) {
+    leagueArrayComplete = Cookies.get('leagueArrayCookie');
+    console.log("got league cookie");
 }
 
 
@@ -44,34 +47,6 @@ function userPromiseData(user){
   console.log("userPromiseData ran");
   return userDeferred.promise();
 }
-// //USERID AND PASSWORD INFO IS CHECKED AGAINST FIREBASE
-// function checkPassword(origin){
-//   var userIdPromise = userPromiseData(userId);
-//   userIdPromise.fail(function(){
-//     console.log("userId did not exist on firebase.");
-//     if (origin === "createUser"){
-//       console.log("created new user.")
-//       fireRef.child('userArray').child(userId).set({password : userData});
-//       window.location.assign("fbs3.html");
-//     }
-//   });
-//   userIdPromise.done(function(userSnap){
-//     if (userPassword == userSnap.child("password").val()){
-//       console.log("password matches");
-//       userArrayComplete = userSnap;
-//       console.log("userArrayComplete: " + userArrayComplete.key());
-//       localStorage.localUserId = userSnap.key();
-//       localStorage.localUserPassword = userSnap.child("password").val();
-//       window.location.assign("fbs3.html");
-//     }
-//     else{
-//       console.log ("Sorry! wrong password..");
-//       if(origin === "indexCheck"){
-//         window.location.assign("index.html");
-//       }
-//     }
-//   });
-// }
 //GRAB WHOLE LEAGUE ARRAY FOR USE THROUGHOUT GAME.
 function leagueSnapshot (tempLeague){
   var leagueDeferred = $.Deferred();
@@ -101,22 +76,64 @@ function teamGlanceFill(teamName){
     var playerPoint;
     if (!leagueArrayComplete){
       console.log("league array did not exist");
-      var leaguePromise = leagueSnapshot(userArrayComplete.child("league").val());
-      leaguePromise.fail(function(){
-        alert("leaguePromise failed: did not exist on firebase.");
-      });
-      leaguePromise.done(function(snap){
-        leagueArrayComplete = snap;
-      });
-    }else{console.log("league array found locally");}
-    console.log("retrieved league array. Name: "+leagueArrayComplete.key());
+      if (userArrayComplete.child("league").val()){
+        leagueArrayCheck();
+      }else{
+        $('#buttonContain').css("display","inline-block");
+      }
+    }else{
+      console.log("league array found locally. Name: "+leagueArrayComplete.key());
+      $('#teamContain').css("display","inline-block");
+    }
+
     //   userArrayComplete.forEach(function(childSnap) {}
       //$('#rookieList > tbody:last-child').append('<tr><td>'+tempAttribute[9]+'</td>');
 }
 //RETRIEVE LEAGUE ARRAY IF NOT AVAILABLE LOCALLY
 function leagueArrayCheck(){
-
+  var leaguePromise = leagueSnapshot(userArrayComplete.child("league").val());
+  leaguePromise.fail(function(){
+    alert("leaguePromise failed: did not exist on firebase.");
+  });
+  leaguePromise.done(function(snap){
+    leagueArrayComplete = snap;
+    $('#teamContain').css("display","inline-block");
+    Cookies.set('leagueArrayCookie', leagueArrayComplete);
+    console.log("retrieved league array. Name: "+leagueArrayComplete.key());
+  });
 }
+//A NEW USER CALLS THIS FUNCTION WHEN JOINING A LEAGUE
+function joinLeague(){
+  console.log("join league run.");
+  var leaguePromise = wholeLeagueDeferred();
+  leaguePromise.fail(function(){
+    alert("leaguePromise failed: did not exist on firebase.");
+  });
+  leaguePromise.done(function(snap){
+    snap.forEach(function(leagueSnap) {
+      leagueSnap.forEach(function(teamSnap){
+        if(teamSnap.child("owner").val() == "compAI"){
+          console.log("found available team");
+          fireRef.child('userArray').child(userId).child("league").set(leagueSnap.key());
+          fireRef.child('userArray').child(userId).child("team").set(teamSnap.key());
+          fireRef.child('leagueArray').child("alphaLeague").child(teamSnap.key()).child("owner").set(userId);
+          window.location.assign("fbs3.html");
+          return true;
+        }
+      });
+    });
+    console.log("no compAI team could be found.");
+  });
+}
+//Deferred FUNCTION FOR THE WHOLE LEAGUE ARRAY
+function wholeLeagueDeferred(){
+  var leagueDeferred = $.Deferred();
+  fireRef.child("leagueArray").once('value', function (snap){
+    leagueDeferred.resolve(snap);
+  });
+  return leagueDeferred.promise();
+}
+
 function randNum(min,max){
   adjMax = max-min;
   var tempNum = Math.floor((Math.random() * adjMax) + min);
