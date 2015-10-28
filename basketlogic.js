@@ -7,6 +7,8 @@ var lastNameArray = [];
 var firstNameArray = ["Quincy","Lavoy","Giannis","Jordan","Tony","Carmelo","Stevens","Arron","Pero","Dimetrios","Chris","Trevor","Alexis","Alan","Darrel","Furkan","James","Brandon","Cole","Justin","Omar","LaMarcus","Kyle","Augustin","Alexanders","Ayer"];
 var userArrayComplete;
 var leagueArrayComplete;
+var leagueCreateName;
+var teamCreateName;
 var userId;
 var userPassword;
 console.log("variables reset to null state");
@@ -139,6 +141,20 @@ function randNum(min,max){
   var tempNum = Math.floor((Math.random() * adjMax) + min);
   return tempNum;
 }
+//FIND A NUMBER NEAR THE APROXIMATE AVERAGE
+function nearAverageRandom(startNum, min, max){
+  // console.log ("nearAverageRandom run");
+  var num = Math.floor((max-min)/15)+1;
+  for (var i = 0; i < 10; i++) {
+    var smallNum = randNum(-Math.abs(num),num);
+    // console.log ("the small number is " +smallNum)
+    startNum +=  smallNum;
+    // console.log ("the start number is " +startNum);
+    if (startNum >max){startNum = max;}
+    if (startNum <min){startNum = min;}
+  }
+  return startNum;
+}
 
 function generateName(){
   var tempName = "";
@@ -151,24 +167,52 @@ function addPlayer(source){
   console.log("run add player");
   var generatePlayer = [];
   //FILL GENPLAYER WITH [LEAGUE,TEAM,NAME,HEIGHT,CONTRACT,SPEED,SHOOTING,DEFENCE,POSTITION]
-  generatePlayer.push($('#leagueName').val());
-  generatePlayer.push($('#playerTeamInput').val());
-  if (source == "form"){
-    generatePlayer.push($('#playerNameInput').val());
-    generatePlayer.push($('#playerHeightInput').val());
-    generatePlayer.push($('#playerContractInput').val());
-  }else{
-    generatePlayer.push(generateName());
-    generatePlayer.push(randNum(70,98));
-    generatePlayer.push(randNum(1,10));
-  }
-  generatePlayer.push(randNum(1,100));
-  generatePlayer.push(randNum(1,100));
-  generatePlayer.push(randNum(1,100));
-  generatePlayer.push("bench");
+  // if (source == "form"){
+  //   generatePlayer.push($('#leagueName').val());
+  //   generatePlayer.push($('#playerTeamInput').val());
+  //   generatePlayer.push($('#playerNameInput').val());
+  //   generatePlayer.push($('#playerHeightInput').val());
+  //   generatePlayer.push($('#playerContractInput').val());
+  // }else{
+  //   generatePlayer.push(userArrayComplete.child("league").val());
+  //   generatePlayer.push(userArrayComplete.child("team").val());
+  //   generatePlayer.push(generateName());
+  //   generatePlayer.push(nearAverageRandom(72,60,84));
+  //   generatePlayer.push(randNum(1,10));
+  // }
+  // generatePlayer.push("bench");
+  // generatePlayer.push(150+nearAverageRandom(60,0,150));
+  // generatePlayer.push(18+nearAverageRandom(3,0,7));
+  // var skillId = randNum(30,60);
+  // var potentialSkill = randNum(60,90);
+  // var tempAverage = skillId;
+  // var skillAverage = skillId;
+  // var goalAverage = skillId;
+  // var skillArray=[];
+  // var totalAttribute = 3;
+  // for (var y = 0; y < 2; y++) {
+  //   for (var i = 0; i < totalAttribute; i++) {
+  //     var tempMin = 10;
+  //     var tempMax = 100;
+  //     var tempSkill = nearAverageRandom(skillAverage, tempMin ,tempMax);
+  //     skillArray.push(tempSkill);
+  //     var tempNum = 0;
+  //     var tempIndex = 0;
+  //     $.each(skillArray, function( index, value ) {
+  //       tempNum += value;
+  //       tempIndex = index + 1;
+  //     });
+  //     tempAverage = Math.floor(tempNum / (tempIndex));
+  //     var remainAttribute = totalAttribute - i -1;
+  //     skillAverage = Math.floor(((goalAverage * totalAttribute ) - tempNum) / remainAttribute);
+  //   };
+  //   tempAverage = potentialSkill;
+  //   skillAverage = potentialSkill;
+  //   goalAverage = potentialSkill;
+  // };
 
-  fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({injury:"true", height : generatePlayer[3], contract: {amount:generatePlayer[4]}, speed: generatePlayer[5], shooting: generatePlayer[6], defence: generatePlayer[7], position: generatePlayer[8]});
-  console.log("created "+generatePlayer[2]);
+  // fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({injury:false, height : generatePlayer[3], contract: {amount:generatePlayer[4]}, position: generatePlayer[5], weight: generatePlayer[6], age: generatePlayer[7], speed: skillArray[0], shooting: skillArray[1], defence: skillArray[2], speedPot: skillArray[3], shootingPot: skillArray[4], defencePot: skillArray[5]});
+  // console.log("created player: "+generatePlayer[2]);
 }
 
 function simGames(){
