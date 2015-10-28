@@ -8,28 +8,28 @@
             background-image: url("./assets/fbsbackground.jpg");
             background-color: #cccccc;
         }
-        form {
-            position: absolute;
-            left: 30px;
-            top: 220px;
-        }
     </style>
+    <link href="pagelayout.css" rel="stylesheet">
     <script src="https://cdn.firebase.com/js/client/2.2.7/firebase.js"></script>
     <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
-    <script src="basketlogic.js"></script>
+    <script src="js_cookie.js"></script>
+    <script src="loginlogic.js"></script>
 </head>
     <body>
-        <!-- USER LOGIN IN FORM -->
-        <form name="loginForm" onsubmit = "go();return false;" accept-charset="utf-8">
-            <ul>
-                <li><label for="userNameInput">Username</label>
-                <input type="text" id="userNameInput" placeholder="Type your user name here..." required></li>
-                <li><label for="passwordInput">Password</label>
-                <input type="password" id="passwordInput" placeholder="Type your password here..." required></li>
-                <li>
-                <input type="submit" value="Login"></li>
-            </ul>
-        </form>
+        <div class ="loginContain">
+            <!-- USER LOGIN IN FORM -->
+            <form name="loginForm" onsubmit = "go();return false;" accept-charset="utf-8">
+                <ul>
+                    <li><label for="userNameInput">Username</label>
+                    <input type="text" id="userNameInput" value="seth" required></li>
+                    <li><label for="passwordInput">Password</label>
+                    <input type="password" id="passwordInput" value="pelican" required></li>
+                    <li>
+                    <input type="submit" value="Login"></li>
+                </ul>
+            </form>
+            <button onclick="resetUser();">Reset</button>
+        </div>
     </body>
 </html>
 

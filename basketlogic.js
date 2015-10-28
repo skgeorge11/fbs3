@@ -1,110 +1,161 @@
 $(document).ready(console.log("JQuery ready"));
 // CREATE A REFERENCE TO FIREBASE
 var fireRef = new Firebase("https://fbs3.firebaseio.com/");
-var userId = localStorage.localUserId;
-var userPassword;
-//var userLeaguePromise = userPromiseData();
-var userTeam;
 
-function userPromiseData(){
-  var userDeferred = $.Deferred();
-  fireRef.child('userArray').child(userId).once('value',
-    function (snap) {
-      var snapPassVal = snap.child("password").val();
-      if(snapPassVal === userPassword){
-          userDeferred.resolve(snap.child("league").val());
-          userTeam = snap.child("team").val();
-      }
-    });
-  console.log("userPromiseData ran: "+userId);
-  return userDeferred.promise();
-}
+//GLOBAL VARIABLES
+var lastNameArray = [];
+var firstNameArray = ["Quincy","Lavoy","Giannis","Jordan","Tony","Carmelo","Stevens","Arron","Pero","Dimetrios","Chris","Trevor","Alexis","Alan","Darrel","Furkan","James","Brandon","Cole","Justin","Omar","LaMarcus","Kyle","Augustin","Alexanders","Ayer"];
+var userArrayComplete;
+var leagueArrayComplete;
+var userId;
+var userPassword;
+console.log("variables reset to null state");
+
+//AUTOMATIC SCRIPT RUN ON LOAD BELOW
 
 
 //CHECK FOR LOCAL STORAGE
 if(typeof(Storage) !== "undefined") {
     // Code for localStorage/sessionStorage.
-    console.log ("Yes!  Web Storage support..");
+    userId = localStorage.localUserId;
+    userPassword = localStorage.localUserPassword;
+    leagueArrayComplete = localStorage.localLeagueArray;
+    console.log("user variables taken from localStorage: "+userId);
 } else {
     console.log ("Sorry! No Web Storage support..");
 }
-
-//CHECK FOR USER DUPLICATION/ SIGN IN
-function go() {
-  userId = $('#userNameInput');
-  userPassword = $('#passwordInput');
-  tryCreateUser(userId.val(), userPassword.val());
+if (Cookies.get('userArrayCookie') != null) {
+    userArrayComplete = Cookies.get('userArrayCookie');
+    console.log("got user cookie: "+userArrayComplete);
 }
-// Tries to set /users/<userId> to the specified data
-function tryCreateUser(userId, userData) {
-  //var userDeferred = $.Deferred();
-  fireRef.child('userArray').child(userId).once('value',
+
+
+//CALLED FUNCTIONS BELOW
+
+
+//RETRIEVE PROMISE USER DATA FROM FIREBASE ARRAY
+function userPromiseData(user){
+  var userDeferred = $.Deferred();
+  fireRef.child('userArray').child(user).once('value',
     function (snap) {
-      var snapVal = snap.val();
-      var snapPassVal = snap.child("password").val();
-      if (snapPassVal != null) {
-        console.log("user already exists.")
-        if(snapPassVal === userData){
-          console.log("password matches");
-          localStorage.localUserId = userId;
-          localStorage.localUserPassword = userData;
-          window.location.assign("fbs3.html");
-        } else {
-          alert("password doesn't match");
-        }
-      } else {
-        console.log("user snap is undefined.")
-        fireRef.child('userArray').child(userId).set({password : userData});
-        window.location.assign("fbs3.html");
-      }
-  });
+        userDeferred.resolve(snap);
+    }
+  );
+  console.log("userPromiseData ran");
+  return userDeferred.promise();
 }
-
-function teamSnapshotFunction (tempLeague, tempTeam){
-  var teamDeferred = $.Deferred();
-  fireRef.child("leagueArray").child(tempLeague).child("teamArray").child(tempTeam).once('value', function (snap){
-    teamDeferred.resolve(snap);
+// //USERID AND PASSWORD INFO IS CHECKED AGAINST FIREBASE
+// function checkPassword(origin){
+//   var userIdPromise = userPromiseData(userId);
+//   userIdPromise.fail(function(){
+//     console.log("userId did not exist on firebase.");
+//     if (origin === "createUser"){
+//       console.log("created new user.")
+//       fireRef.child('userArray').child(userId).set({password : userData});
+//       window.location.assign("fbs3.html");
+//     }
+//   });
+//   userIdPromise.done(function(userSnap){
+//     if (userPassword == userSnap.child("password").val()){
+//       console.log("password matches");
+//       userArrayComplete = userSnap;
+//       console.log("userArrayComplete: " + userArrayComplete.key());
+//       localStorage.localUserId = userSnap.key();
+//       localStorage.localUserPassword = userSnap.child("password").val();
+//       window.location.assign("fbs3.html");
+//     }
+//     else{
+//       console.log ("Sorry! wrong password..");
+//       if(origin === "indexCheck"){
+//         window.location.assign("index.html");
+//       }
+//     }
+//   });
+// }
+//GRAB WHOLE LEAGUE ARRAY FOR USE THROUGHOUT GAME.
+function leagueSnapshot (tempLeague){
+  var leagueDeferred = $.Deferred();
+  fireRef.child("leagueArray").child(tempLeague).once('value', function (snap){
+    leagueDeferred.resolve(snap);
   });
-  return teamDeferred.promise();
+  return leagueDeferred.promise();
 }
-
+//CHECK FOR LOCATION OF HOSTED PAGE DATA
+function teamGlanceCheck(teamName){
+  if(window.location.origin == "file://"){
+    console.log("its a local host...");
+    var userPromise = userPromiseData(userId);
+    userPromise.done(function(userSnap){
+      userArrayComplete = userSnap;
+      console.log("userArrayComplete: " + userArrayComplete.key());
+      teamGlanceFill(teamName);
+    });
+  }else{
+    teamGlanceFill(teamName);
+  }
+}
 //FILL TEAM INFO PAGE
 function teamGlanceFill(teamName){
-    console.log ("teamGlanceFill initiated: " +userLeaguePromise);
+    console.log ("teamGlanceFill initiated: " +userArrayComplete.key());
     var playerInfo;
     var playerPoint;
-    var userLeaguePromise = userPromiseData();
-    console.log("pending leaguePromise: " + userLeaguePromise);
-    userLeaguePromise.done(function(n){
-      console.log("leaguePromise ran");
-      // var teamSnapshot = teamSnapshotFunction(userLeaguePromise,userTeam);
-      // teamSnapshot.done(function(snap){
-      //   console.log("teamPromise ran: ");
-      //   // The callback function will get called twice, once for each child
-      //   snap.forEach(function(childSnap) {
-      //     console.log("for each child")
-      //     // childData will be the actual contents of the child
-      //     $('#tdName1').text(childSnap.key());
-      //     $('#tdHeight1').text(childSnap.height.val() + " inches");
-      //     $('#tdContract1').text(childSnap.contract.amount.val());
-      //   });
-      // });
-    }).fail(function () {
-            console.log("failed leaguePromise");
+    if (!leagueArrayComplete){
+      console.log("league array did not exist");
+      var leaguePromise = leagueSnapshot(userArrayComplete.child("league").val());
+      leaguePromise.fail(function(){
+        alert("leaguePromise failed: did not exist on firebase.");
       });
+      leaguePromise.done(function(snap){
+        leagueArrayComplete = snap;
+      });
+    }else{console.log("league array found locally");}
+    console.log("retrieved league array. Name: "+leagueArrayComplete.key());
+    //   userArrayComplete.forEach(function(childSnap) {}
+      //$('#rookieList > tbody:last-child').append('<tr><td>'+tempAttribute[9]+'</td>');
+}
+//RETRIEVE LEAGUE ARRAY IF NOT AVAILABLE LOCALLY
+function leagueArrayCheck(){
+
+}
+function randNum(min,max){
+  adjMax = max-min;
+  var tempNum = Math.floor((Math.random() * adjMax) + min);
+  return tempNum;
 }
 
-function addPlayer(){
-  var currentLeague = $('#leagueName').val();
+function generateName(){
+  var tempName = "";
+  var length = (firstNameArray.length) - 1;
+  tempName =  firstNameArray[randNum(0,length)] +" " + firstNameArray[randNum(0,length)];
+  return tempName;
+}
+
+function addPlayer(source){
   console.log("run add player");
-  var teamId = $('#playerTeamInput').val();
-  var playerId = $('#playerNameInput').val();
-  var heightId = $('#playerHeightInput').val();
-  var contractId = $('#playerContractInput').val();
-  fireRef.child("leagueArray").child(currentLeague).child(teamId).child(playerId).set({injury:"true", height : heightId, contract: {amount:contractId}});
+  var generatePlayer = [];
+  //FILL GENPLAYER WITH [LEAGUE,TEAM,NAME,HEIGHT,CONTRACT,SPEED,SHOOTING,DEFENCE,POSTITION]
+  generatePlayer.push($('#leagueName').val());
+  generatePlayer.push($('#playerTeamInput').val());
+  if (source == "form"){
+    generatePlayer.push($('#playerNameInput').val());
+    generatePlayer.push($('#playerHeightInput').val());
+    generatePlayer.push($('#playerContractInput').val());
+  }else{
+    generatePlayer.push(generateName());
+    generatePlayer.push(randNum(70,98));
+    generatePlayer.push(randNum(1,10));
+  }
+  generatePlayer.push(randNum(1,100));
+  generatePlayer.push(randNum(1,100));
+  generatePlayer.push(randNum(1,100));
+  generatePlayer.push("bench");
+
+  fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({injury:"true", height : generatePlayer[3], contract: {amount:generatePlayer[4]}, speed: generatePlayer[5], shooting: generatePlayer[6], defence: generatePlayer[7], position: generatePlayer[8]});
+  console.log("created "+generatePlayer[2]);
 }
 
 function simGames(){
+  console.log("sim Games run");
 // determine day of season
 // getTeamMatchups - begin matchup loop
 // get team 1 roster - pull from team array - check injury
@@ -115,46 +166,5 @@ function simGames(){
 // post stats to players
 // back to matchup loop
 // end
-var currentLeague = $('#leagueInput').val();
-console.log(currentLeague);
-var currentYear = 0;
-var currentDay = 0;
-var firstTeam = "0";
-var secondTeam = "0";
-
-//CREATE DEFFERED LEAGUE DATA
-function leaguePromiseData(){
-  var leagueDeferred = $.Deferred();
-  fireRef.child("leagueArray").child(currentLeague).once('value',
-  function (snap) {leagueDeferred.resolve(snap);});
-  return leagueDeferred.promise();
-}
-var leaguePromise = leaguePromiseData();
-
-// GET LEAGUE, YEAR, day
-leaguePromise.done(function(league){
-  currentYear  = league.child("year").val();
-  console.log(currentYear);
-  currentDate = league.child("currentDay").val();
-  console.log("currently day "+currentDate);
-  // FIND MATCHUPS
-  league.child("day"+currentDate).forEach(function(teamMatch) {
-      console.log(teamMatch.key());//child("match1").child("Giraffes").val()
-      teamMatch.forEach(function(teamName) {
-          console.log("ran teamName child");
-          firstTeam = teamName.key();
-          secondTeam = teamName.val();
-      });
-
-    console.log("the two teams are "+firstTeam+secondTeam);
-
-      // league.child(firstTeam).forEach(function(childLeague){
-
-      // });
-
-    });
-
-  });
-
 
 }

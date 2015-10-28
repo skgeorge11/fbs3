@@ -3,81 +3,48 @@
   <head>
     <meta charset="utf-8">
     <title>Fantasy Basketball Sim 3v3</title>
-    <!-- <link rel="stylesheet" href="style.css"> -->
+    <link href="pagelayout.css" rel="stylesheet">
     <script src="https://cdn.firebase.com/js/client/2.2.7/firebase.js"></script>
     <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="js_cookie.js"></script>
     <script src="basketlogic.js"></script>
-    <style>
-table {
-    width:100%;
-}
-table, th, td {
-    border: 1px solid black;
-    border-collapse: collapse;
-}
-th, td {
-    padding: 5px;
-    text-align: left;
-}
-table#t01 tr:nth-child(even) {
-    background-color: #eee;
-}
-table#t01 tr:nth-child(odd) {
-   background-color:#fff;
-}
-table#t01 th    {
-    background-color: black;
-    color: white;
-}
-</style>
 </head>
     <body>
-        <p>Your team:
-        <br>
-        <table id="t01">
-            <tr>
-                <th>Name</th>
-                <th>Height</th>
-                <th>Contract</th>
-            </tr>
-            <tr>
-                    <td id="tdName1">Jill</td>
-                    <td id="tdHeight1">Smith</td>
-                    <td id="tdContract1">50</td>
-            </tr>
-            <tr>
-                    <td>Eve</td>
-                    <td>Jackson</td>
-                    <td>94</td>
-              </tr>
-              <tr>
-                    <td>John</td>
-                    <td>Doe</td>
-                    <td>80</td>
-            </tr>
-        </table>
-
-        <script type="text/javascript">teamGlanceFill();</script>
-
-        <h1>Add new player</h1>
-        <form name="addPlayerForm" onsubmit = "addPlayer();return false;" accept-charset="utf-8">
-            <ul>
-                <li><label for="leagueName">League</label>
-                <input type="text" id="leagueName" placeholder="Type your league name here..." required></li>
-                <li><label for="playerTeamInput">Team</label>
-                <input type="text" id="playerTeamInput" placeholder="Type your user name here..." required></li>
-                <li><label for="playerNameInput">Name</label>
-                <input type="text" id="playerNameInput" placeholder="Type your password here..." required></li>
-                <li><label for="playerHeightInput">Height</label>
-                <input type="number" min="70" max="86" id="playerHeightInput" placeholder="Type your user name here..." required></li>
-                <li><label for="playerContractInput">Contract</label>
-                <input type="number" id="playerContractInput" placeholder="Type your password here..." required></li>
-                <li>
-                <input type="submit" value="Create"></li>
-            </ul>
-        </form>
-        <br><br>
-        <a href="index.html">Home</a>
-        <a href="./assets/sim/sim1.html">Sim</a>
+        <div class="sideBanner" id="leftBanner"></div>
+        <div class="navContain"></div>
+        <div class="centerContain">
+            <p>Your team:
+            <br>
+            <table id="teamGlance">
+                <tr>
+                    <th>Name</th>
+                    <th>Height</th>
+                    <th>Contract</th>
+                </tr>
+            </table>
+            <script type="text/javascript">teamGlanceCheck();</script>
+            <br><br>
+            <h1>Add new player</h1>
+            <form name="addPlayerForm" onsubmit = "addPlayer("form");return false;" accept-charset="utf-8">
+                <ul>
+                    <li><label for="leagueName">League</label>
+                    <input type="text" id="leagueName" value="alphaLeague" required></li>
+                    <li><label for="playerTeamInput">Team</label>
+                    <input type="text" id="playerTeamInput" value="Giraffes" required></li>
+                    <li><label for="playerNameInput">Name</label>
+                    <input type="text" id="playerNameInput" placeholder="Type your password here..." required></li>
+                    <li><label for="playerHeightInput">Height</label>
+                    <input type="number" min="70" max="86" id="playerHeightInput" placeholder="Type your user name here..." required></li>
+                    <li><label for="playerContractInput">Contract</label>
+                    <input type="number" id="playerContractInput" placeholder="Type your password here..." required></li>
+                    <li>
+                    <input type="submit" value="Create"></li>
+                </ul>
+            </form>
+            <br><br>
+            <a href="index.html">Home</a>
+            <a href="./assets/sim/sim1.html">Sim</a>
+        </div>
+        <div class="sideBanner" id="rightBanner"></div>
     </body>
 </html>

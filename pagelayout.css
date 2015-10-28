@@ -1,0 +1,104 @@
+body {
+    /*background-image: url("../assets/repeatbackground.jpg");
+    background-repeat: repeat;
+    background-size: 200px 50px;*/
+    background-color: white;
+    padding: 0px;
+    margin: 0px;
+}
+h1{
+    padding:0px;
+    margin: 0px;
+    font-size:3vw;
+}
+.navContain{
+    position: absolute;
+    left:14vw;
+    top:0px;
+    background: navy;
+    width: 70vw;
+    padding: 2px;
+    min-height:5px;
+    height:9vh;
+    z-index: 1;
+}
+#navGraphic{
+    position: relative;
+    left: 0px;
+    max-height: 8vh;
+}
+#menuIcon{
+    /*position: absolute;
+    bottom: -100%;*/
+    max-height: 8vh;
+}
+.centerContain {
+    background-image: url("./assets/fbsbackground.jpg");
+    background-repeat: repeat;
+    background-size: 100%;
+    display: inline-block;
+    position: relative;
+    margin-top: 10vh;
+    margin-left: 15%;
+    /*height: 2000px;*/
+    min-height: 100vh;
+    width: 70%
+}
+.loginContain{
+    position: relative;
+    margin-top: 40vh;
+    margin-left: 2%;
+}
+.sideBanner {
+    /*background-image: url("./assets/sidebarheader.jpg");*/
+    background-color: navy;
+    background-size: cover;
+    background-repeat: no-repeat;
+    display: inline;
+    margin : 0px;
+    min-width: 15%;
+    height: 100%;
+    border: 0px;
+    z-index: 2;
+}
+.verticalLogo {
+    display:block;
+    margin:auto;
+    position: relative;
+    top: 50vh;
+    transform: translateY(-50%);
+    max-width: 50%;
+}
+#leftBanner {
+    position: fixed;
+    left: 0px;
+}
+#rightBanner {
+    position: fixed;
+    right: 0px;
+}
+table {
+    width:100%;
+}
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+th, td {
+    padding: 5px;
+    text-align: left;
+}
+table tr:nth-child(even) {
+    background-color: #eee;
+}
+table tr:nth-child(odd) {
+    background-color:#fff;
+}
+table th    {
+    background-color: black;
+    color: white;
+}
+progress{
+    margin-left:20px;
+    width:80%;
+}

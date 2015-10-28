@@ -11,19 +11,34 @@
             background-image: url("../fbsbackground.jpg");
             background-color: #cccccc;
         }
-        form {
+        #leagueSim {
             position: absolute;
             left: 30px;
             top: 220px;
+        }
+        #simPlayer {
+            position: absolute;
+            left: 30px;
+            top: 300px;
         }
     </style>
 </head>
     <body>
         <a href="/fbs3/fbs3.html">Home</a>
-        <form name="leagueInputForm" onsubmit = "simGames();return false;" accept-charset="utf-8">
+        <form id="leagueSim" onsubmit = "simGames();return false;" accept-charset="utf-8">
                 <li><label for="leagueInput">League</label>
-                <input type="text" id="leagueInput" placeholder="Type your league name here..." required></li>
+                <input type="text" id="leagueInput" value="alphaLeague" placeholder="Type your league name here..." required></li>
                 <input type="submit" value="Sim Games">
+        </form>
+
+        <form id="simPlayer" onsubmit = "addPlayer();return false;" accept-charset="utf-8">
+            <ul>
+                <li><label for="leagueName">League</label>
+                <input type="text" id="leagueName" value="alphaLeague" required></li>
+                <li><label for="playerTeamInput">Name</label>
+                <input type="text" id="playerTeamInput" value="Giraffes" required></li>
+                <input type="submit" value="Create"></li>
+            </ul>
         </form>
     </body>
 </html>
