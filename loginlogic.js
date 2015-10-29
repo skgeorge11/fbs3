@@ -55,6 +55,7 @@ function checkPassword(origin){
         localStorage.localUserId = userId;
         localStorage.localUserPassword = userPassword;
         window.location.assign("fbs3.html");
+        return true;
       }
     }
     if (userPassword == userSnap.child("password").val()){

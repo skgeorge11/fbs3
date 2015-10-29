@@ -21,16 +21,19 @@
             </div >
             <div class = "playerContain" id="teamContain">
                 <table id="teamGlance">
-                    <tr>
-                        <th>Name</th>
-                        <th>Height</th>
-                        <th>Contract</th>
-                    </tr>
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Height</th>
+                            <th>Contract</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
                 </table>
                 <script type="text/javascript">teamGlanceCheck();</script>
                 <br><br>
                 <h1>Add new player</h1>
-                <form name="addPlayerForm" onsubmit = "addPlayer("form");return false;" accept-charset="utf-8">
+                <form name="addPlayerForm" onsubmit = "addPlayer('form');return false;" accept-charset="utf-8">
                     <ul>
                         <li><label for="leagueName">League</label>
                         <input type="text" id="leagueName" value="alphaLeague" required></li>
@@ -46,6 +49,7 @@
                         <input type="submit" value="Create"></li>
                     </ul>
                 </form>
+                <button onclick="addPlayer();">add player</button>
             </div>
             <br><br>
             <a href="index.html">Login</a>
