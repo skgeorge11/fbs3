@@ -281,16 +281,14 @@ function checkSim(){
 function createMatchups(leagueName){
   var matchUpObject = {};
   for (var z = 1; z <83; z++) {
-      matchUpObject[z]={team1:"team2"};
-    };
+    matchUpObject[z]={team1:"team2"};
+  };
   var tempTeam2;
-  for (var x = 0; x <15; x+=2) {
-    tempTeam2 = x+1;
+  for (var x = 0; x <16; x++) {
     for (var y = 1; y <83; y++) {
+      var dayRemain = (y%15)+1;
+      tempTeam2=(x+dayRemain)%16;
       matchUpObject[y]["team"+x]="team"+tempTeam2;
-      tempTeam2 ++;
-      if (tempTeam2 > 15) {tempTeam2 -= 15;};
-      if (tempTeam2 == x) {tempTeam2 ++;};
     };
   };
   return matchUpObject;
