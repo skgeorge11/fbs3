@@ -280,8 +280,11 @@ function checkSim(){
 //SETUP MATCHUPS WHEN CREATING LEAGUE
 function createMatchups(leagueName){
   var matchUpObject = {};
+  for (var z = 1; z <83; z++) {
+      matchUpObject[z]={team1:"team2"};
+    };
   var tempTeam2;
-  for (var x = 0; x <15; x+2) {
+  for (var x = 0; x <15; x+=2) {
     tempTeam2 = x+1;
     for (var y = 1; y <83; y++) {
       matchUpObject[y]["team"+x]="team"+tempTeam2;
