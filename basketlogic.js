@@ -50,6 +50,20 @@ function userPromiseData(user){
   console.log("userPromiseData ran");
   return userDeferred.promise();
 }
+//RETRIEVE LEAGUE ARRAY IF NOT AVAILABLE LOCALLY
+function leagueArrayCheck(){
+  var leaguePromise = leagueSnapshot(userArrayComplete.child("league").val());
+  leaguePromise.fail(function(){
+    alert("leaguePromise failed: did not exist on firebase.");
+  });
+  leaguePromise.done(function(snap){
+    leagueArrayComplete = snap;
+    $('#teamContain').css("display","inline-block");
+    Cookies.set('leagueArrayCookie', leagueArrayComplete);
+    console.log("retrieved league array. Name: "+leagueArrayComplete.key());
+    teamGlanceFill(userArrayComplete.child("team").val());
+  });
+}
 //GRAB WHOLE LEAGUE ARRAY FOR USE THROUGHOUT GAME.
 function leagueSnapshot (tempLeague){
   var leagueDeferred = $.Deferred();
@@ -74,36 +88,30 @@ function teamGlanceCheck(teamName){
 }
 //FILL TEAM INFO PAGE
 function teamGlanceFill(teamName){
-    console.log ("teamGlanceFill initiated: " +userArrayComplete.key());
-    var playerInfo;
-    var playerPoint;
-    if (!leagueArrayComplete){
-      console.log("league array did not exist");
-      if (userArrayComplete.child("league").val()){
-        leagueArrayCheck();
-      }else{
-        $('#buttonContain').css("display","inline-block");
-      }
+  console.log ("teamGlanceFill initiated: " +userArrayComplete.key());
+  if (!leagueArrayComplete){
+    console.log("league array did not exist");
+    if (userArrayComplete.child("league").val()){
+      leagueArrayCheck();
     }else{
-      console.log("league array found locally. Name: "+leagueArrayComplete.key());
-      $('#teamContain').css("display","inline-block");
+      $('#buttonContain').css("display","inline-block");
     }
-
-    //   userArrayComplete.forEach(function(childSnap) {}
-      //$('#rookieList > tbody:last-child').append('<tr><td>'+tempAttribute[9]+'</td>');
-}
-//RETRIEVE LEAGUE ARRAY IF NOT AVAILABLE LOCALLY
-function leagueArrayCheck(){
-  var leaguePromise = leagueSnapshot(userArrayComplete.child("league").val());
-  leaguePromise.fail(function(){
-    alert("leaguePromise failed: did not exist on firebase.");
-  });
-  leaguePromise.done(function(snap){
-    leagueArrayComplete = snap;
+  }else{
+    console.log("league array found locally. Name: "+leagueArrayComplete.key());
     $('#teamContain').css("display","inline-block");
-    Cookies.set('leagueArrayCookie', leagueArrayComplete);
-    console.log("retrieved league array. Name: "+leagueArrayComplete.key());
-  });
+  }
+  var teamPoint = userArrayComplete.child("team").val();
+  if(leagueArrayComplete){
+    leagueArrayComplete.child(teamPoint).forEach(function(teamSnap) {
+      var playerInfo=[];
+      if(teamSnap.key() != "owner"){
+        teamSnap.forEach(function(playerSnap) {
+          playerInfo.push(playerSnap.val());
+        });
+      $('#teamGlance > tbody:last-child').append('<tr><td>'+teamSnap.key()+'</td><td>'+playerInfo[0]+'</td><td>'+playerInfo[1]+'</td><td>'+playerInfo[4]+'</td><td>'+playerInfo[11]+'</td><td>'+playerInfo[7]+'</td><td>'+playerInfo[2]+'</td><td>'+playerInfo[9]+'</td></tr>');
+      }
+    });
+  }
 }
 //A NEW USER CALLS THIS FUNCTION WHEN JOINING A LEAGUE
 function joinLeague(){
@@ -180,6 +188,8 @@ function createLeague(num){
     // console.log("running team loop");
     createTeam("league"+num,"team"+i);
   };
+  var tempMatchArray = createMatchups("league"+num);
+  fireRef.child('leagueArray').child("league"+num).child("matchUps").set(tempMatchArray);
   joinLeague();
 }
 //CREATE TEAM
@@ -250,10 +260,39 @@ function addPlayer(source,leagueName,teamName){
       skillArray[adjNum] = skillArray[z] + 5;
     };
   };
-  fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({injury:false, height : generatePlayer[3], contract: {amount:generatePlayer[4]}, position: generatePlayer[5], weight: generatePlayer[6], age: generatePlayer[7], speed: skillArray[0], shooting: skillArray[1], defence: skillArray[2], speedPot: skillArray[3], shootingPot: skillArray[4], defencePot: skillArray[5]});
+  fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({injury:false, height : generatePlayer[3], contract: generatePlayer[4], position: generatePlayer[5], weight: generatePlayer[6], age: generatePlayer[7], speed: skillArray[0], shooting: skillArray[1], defence: skillArray[2], speedPot: skillArray[3], shootingPot: skillArray[4], defencePot: skillArray[5]});
   // console.log("created player: "+generatePlayer[2]);
 }
-
+//CHECK IF SIM IS DUE
+function checkSim(){
+  if(!leagueArrayComplete){console.log("league array not found locally.");}
+  else{
+    var nextDay = leagueArrayComplete.child('currentDay').val();
+    nextDay++;
+    if(Date.getDate()==1){nextDay=1;}
+    fireRef.child('leagueArray').child(leagueArrayComplete.key()).child('currentDay').update(nextDay);
+    // if(nextDay == 1){
+    //   createMatchups(leagueArrayComplete.key());
+    // }
+    // else{simGames();}
+  }
+}
+//SETUP MATCHUPS WHEN CREATING LEAGUE
+function createMatchups(leagueName){
+  var matchUpObject = {};
+  var tempTeam2;
+  for (var x = 0; x <15; x+2) {
+    tempTeam2 = x+1;
+    for (var y = 1; y <83; y++) {
+      matchUpObject[y]["team"+x]="team"+tempTeam2;
+      tempTeam2 ++;
+      if (tempTeam2 > 15) {tempTeam2 -= 15;};
+      if (tempTeam2 == x) {tempTeam2 ++;};
+    };
+  };
+  return matchUpObject;
+}
+//ADVANCE DAY AND SIM GAMES.
 function simGames(){
   console.log("sim Games run");
 // determine day of season
@@ -266,5 +305,5 @@ function simGames(){
 // post stats to players
 // back to matchup loop
 // end
-
+  
 }
