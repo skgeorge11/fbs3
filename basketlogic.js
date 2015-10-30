@@ -182,12 +182,13 @@ function generateName(){
 //WHEN ALL AVAILABLE TEAMS ARE TAKEN BY PLAYERS CREATE A NEW LEAGUE
 function createLeague(num){
   console.log("create league run");
-  avoidBrokenLoop = "leagueCreated";
-  fireRef.child('leagueArray').child("league"+num).set({currentDay:1,year:2016});
-  for (var i = 15; i >= 0; i--) {
+  avoidBrokenLoop = "leagueCreated";''
+  fireRef.child('leagueArray').child("league"+num).set({currentDay:1,year:2016,name:"FBS All-Stars"});
+  for (var i = 16; i >= 0; i--) {
     // console.log("running team loop");
     createTeam("league"+num,"team"+i);
   };
+  fireRef.child("leagueArray").child("league"+num).child("team16").child("").set({owner:"rookies",name:"rookies"});
   var tempMatchArray = createMatchups("league"+num);
   fireRef.child('leagueArray').child("league"+num).child("matchUps").set(tempMatchArray);
   joinLeague();
@@ -196,7 +197,7 @@ function createLeague(num){
 function createTeam(leagueName,teamName){
   // console.log("strings passed to create team: " +leagueName +teamName);
   var tempTeam;
-  fireRef.child('leagueArray').child(leagueName).child(teamName).set({owner:"compAI"});
+  fireRef.child('leagueArray').child(leagueName).child(teamName).set({owner:"compAI",name:"BlueSocks"});
   for (var i = 7; i >= 0; i--) {
     // console.log("running player loop");
     addPlayer(0,leagueName,teamName);
@@ -225,14 +226,15 @@ function addPlayer(source,leagueName,teamName){
   generatePlayer.push("bench");
   generatePlayer.push(150+nearAverageRandom(60,0,150));
   generatePlayer.push(21+randNum(-4,5));
-  var skillId = randNum(30,60);
+  var skillId = randNum(40,60);
   var potentialSkill = randNum(60,90);
   var tempAverage = skillId;
   var skillAverage = skillId;
   var goalAverage = skillId;
   var tempNum = 0;
+  var switchPush;
   var skillArray=[];
-  var totalAttribute = 3;
+  var totalAttribute = 8;
   for (var y = 0; y < 2; y++) {
     for (var i = 0; i < totalAttribute; i++) {
       var remainAttribute = totalAttribute - i;
@@ -249,9 +251,17 @@ function addPlayer(source,leagueName,teamName){
       });
       tempAverage = Math.floor(tempNum / (tempIndex));
     };
-    tempAverage = potentialSkill;
-    skillAverage = potentialSkill;
-    goalAverage = potentialSkill;
+    if(!switchPush){
+      generatePlayer.push(skillAverage);
+      tempAverage = potentialSkill;
+      skillAverage = potentialSkill;
+      goalAverage = potentialSkill;
+      switchPush=1;
+    }else{
+      generatePlayer.push(skillAverage);
+    }
+
+    
   };
   for (var z = 0; z < totalAttribute; z++) {
     var adjNum = z+totalAttribute;
@@ -260,7 +270,8 @@ function addPlayer(source,leagueName,teamName){
       skillArray[adjNum] = skillArray[z] + 5;
     };
   };
-  fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({injury:false, height : generatePlayer[3], contract: generatePlayer[4], position: generatePlayer[5], weight: generatePlayer[6], age: generatePlayer[7], speed: skillArray[0], shooting: skillArray[1], defence: skillArray[2], speedPot: skillArray[3], shootingPot: skillArray[4], defencePot: skillArray[5]});
+
+  fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({injury:false,injuryLength:1, height : generatePlayer[3], contract: generatePlayer[4], position: generatePlayer[5], weight: generatePlayer[6], age: generatePlayer[7], speed: skillArray[0], shooting: skillArray[1], defence: skillArray[2], ballControl: skillArray[3], endurance: skillArray[4], vision: skillArray[5], clutch: skillArray[6], rebounding: skillArray[7], speedPot: skillArray[8], shootingPot: skillArray[9], defencePot: skillArray[10], ballConPot: skillArray[11], endurPot: skillArray[12], visionPot: skillArray[13], clutchPot: skillArray[14], reboundPot: skillArray[15], avgSkill: generatePlayer[8], avgPot: generatePlayer[9], seasons:1});
   // console.log("created player: "+generatePlayer[2]);
 }
 //CHECK IF SIM IS DUE
@@ -284,7 +295,7 @@ function createMatchups(leagueName){
     matchUpObject[z]={team1:"team2"};
   };
   var tempTeam2;
-  for (var x = 0; x <16; x++) {
+  for (var x = 0; x <2; x++) {
     for (var y = 1; y <83; y++) {
       var dayRemain = (y%15)+1;
       tempTeam2=(x+dayRemain)%16;
@@ -292,6 +303,16 @@ function createMatchups(leagueName){
     };
   };
   return matchUpObject;
+}
+//CLONE OBJECT
+function clone(obj){
+  if (obj instanceof Object) {
+      var copy = {};
+      for (var attr in obj) {
+          if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+      }
+      return copy;
+  }
 }
 //ADVANCE DAY AND SIM GAMES.
 function simGames(){
@@ -306,5 +327,17 @@ function simGames(){
 // post stats to players
 // back to matchup loop
 // end
-  
+  var currentDaySim = leagueArrayComplete.child("currentDay").val();
+  var changeDaySim =currentDaySim+1;
+  var leagueObjectCopy = clone(leagueArrayComplete);
+  leagueObjectCopy.currentDay=changeDaySim;
+  leagueArrayComplete.child("matchUps").child(currentDaySim).forEach(function(matchSnap) {
+    var team1Name = matchSnap.key();
+    console.log("team key "+team1Name);
+    var team2Name = matchSnap.val();
+    var team1Players=leagueArrayComplete.child("team1Name").val();
+    console.log("team1Players owner: "+team1Players);
+  });
+  console.log("completed matchup loop");
+  //fireRef.child("leagueArray").child(leagueArrayComplete.key()).set(leagueObjectCopy);
 }
