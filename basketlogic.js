@@ -183,12 +183,12 @@ function generateName(){
 function createLeague(num){
   console.log("create league run");
   avoidBrokenLoop = "leagueCreated";''
-  fireRef.child('leagueArray').child("league"+num).set({currentDay:1,year:2016,name:"FBS All-Stars"});
+  fireRef.child('leagueArray').child("league"+num).set({currentDay:1,year:2016,nameAssign:"FBS All-Stars"});
   for (var i = 16; i >= 0; i--) {
     // console.log("running team loop");
     createTeam("league"+num,"team"+i);
   };
-  fireRef.child("leagueArray").child("league"+num).child("team16").child("").set({owner:"rookies",name:"rookies"});
+  fireRef.child("leagueArray").child("league"+num).child("team16").child("").set({owner:"rookies",nameAssign:"rookies"});
   var tempMatchArray = createMatchups("league"+num);
   fireRef.child('leagueArray').child("league"+num).child("matchUps").set(tempMatchArray);
   joinLeague();
@@ -197,7 +197,7 @@ function createLeague(num){
 function createTeam(leagueName,teamName){
   // console.log("strings passed to create team: " +leagueName +teamName);
   var tempTeam;
-  fireRef.child('leagueArray').child(leagueName).child(teamName).set({owner:"compAI",name:"BlueSocks"});
+  fireRef.child('leagueArray').child(leagueName).child(teamName).set({owner:"compAI",nameAssign:"BlueSocks"});
   for (var i = 7; i >= 0; i--) {
     // console.log("running player loop");
     addPlayer(0,leagueName,teamName);
@@ -304,14 +304,65 @@ function createMatchups(leagueName){
   };
   return matchUpObject;
 }
-//CLONE OBJECT
-function clone(obj){
-  if (obj instanceof Object) {
-      var copy = {};
-      for (var attr in obj) {
-          if (obj.hasOwnProperty(attr)) copy[attr] = clone(obj[attr]);
+//REMOVES NON-PLAYERS AND INJURED PLAYERS FROM GAME TEAM OBJECT
+function onlyHealthy(obj, teamId){
+  for(var playerSnap in obj){
+    if(obj[playerSnap].hasOwnProperty("injury")){
+        if (obj[playerSnap].injury){
+          var changeVal =(leagueArrayComplete.child(teamId).child(playerSnap).child("injuryLength").val())-1;
+          fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(teamId).child(playerSnap).child("injuryLength").set(changeVal);
+          if (changeVal <= 0){
+            fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(teamId).child(playerSnap).child("injury").set(false);
+          }
+          delete obj[playerSnap];
+          console.log("removed injured player from team list and decreased injury length");
+        }
+    }else{
+      delete obj[playerSnap];
+      //console.log("removed non player from team list");
+    }
+  }
+  return obj;
+}
+//SEARCH EACH OBJECT FOR EACH PLAYERS POSITION AND REPLACE IF NEEDED.
+function findPosition(obj){
+  var g1,f1,c1,g2,f2,c2,b1,b2,b3;
+  var benchObj = {};
+  var posObj = {};
+  for(var pName in obj){
+    var posId = obj[pName].position;
+    if (posId == "guard1"){g1 = obj[pName]}
+    else if (posId == "forward1"){f1 = obj[pName]}
+    else if (posId == "center1"){c1 = obj[pName]}
+    else if (posId == "guard2"){g2 = obj[pName]}
+    else if (posId == "forward2"){f2 = obj[pName]}
+    else if (posId == "center2"){c2 = obj[pName]}
+    else if (posId == "bench1"){b1 = obj[pName]}
+    else if (posId == "bench2"){b2 = obj[pName]}
+    else if (posId == "bench3"){b3 = obj[pName]}
+      else{
+        //console.log(pName+" is not assigned to a position.");
+        benchObj[pName] = obj[pName];
       }
-      return copy;
+  }
+  //COMPILE POSITION OBJECT HERE
+  benchObj.up1={3:"sample"};
+  for(var player in benchObj){
+    var i=1
+    //console.log("remaining shooters on bench: " + benchObj[player].shooting);
+    var tempSkill = benchObj[player].avgSkill
+    for(var skill in benchObj["up"+i]){
+      console.log("avg skill is: "+ skill);
+      if (tempSkill > skill){
+        var nextUp = "up"+(i+1);
+        benchObj[nextUp] = benchObj["up"+i];
+        benchObj["up"+i] = benchObj[player];
+        
+      }
+      i++;
+    }
+
+    
   }
 }
 //ADVANCE DAY AND SIM GAMES.
@@ -328,16 +379,24 @@ function simGames(){
 // back to matchup loop
 // end
   var currentDaySim = leagueArrayComplete.child("currentDay").val();
-  var changeDaySim =currentDaySim+1;
-  var leagueObjectCopy = clone(leagueArrayComplete);
-  leagueObjectCopy.currentDay=changeDaySim;
+  var leagueObjectCopy = {currentDay: (currentDaySim+1)};
   leagueArrayComplete.child("matchUps").child(currentDaySim).forEach(function(matchSnap) {
     var team1Name = matchSnap.key();
-    console.log("team key "+team1Name);
     var team2Name = matchSnap.val();
-    var team1Players=leagueArrayComplete.child("team1Name").val();
-    console.log("team1Players owner: "+team1Players);
+    // leagueObjectCopy[team1Name] = leagueArrayComplete.child(team1Name).val();//CHANGED LOCATION OF RECORDING GAME
+    //console.log("team1Players owner: "+leagueObjectCopy[team1Name].owner);
+    var t1 = {}; 
+    t1 = leagueArrayComplete.child(team1Name).val();
+    var t2 = {}; 
+    t2 = leagueArrayComplete.child(team2Name).val();
+    t1 = onlyHealthy(t1, team1Name);
+    t2 = onlyHealthy(t2, team2Name);
+    // for(var y in t1){
+    //   console.log("remaining object item: " + y);
+    // }
+    var t1Pos = findPosition(t1);
+
   });
   console.log("completed matchup loop");
-  //fireRef.child("leagueArray").child(leagueArrayComplete.key()).set(leagueObjectCopy);
+  //fireRef.child("leagueArray").child(leagueArrayComplete.key()).update(leagueObjectCopy);
 }
