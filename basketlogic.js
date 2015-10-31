@@ -326,58 +326,111 @@ function onlyHealthy(obj, teamId){
 }
 //SEARCH EACH OBJECT FOR EACH PLAYERS POSITION AND REPLACE IF NEEDED.
 function findPosition(obj){
-  var g1,f1,c1,g2,f2,c2,b1,b2,b3;
   var benchObj = {};
-  var posObj = {};
+  var posObj={};
   for(var pName in obj){
     var posId = obj[pName].position;
-    if (posId == "guard1"){g1 = obj[pName]}
-    else if (posId == "forward1"){f1 = obj[pName]}
-    else if (posId == "center1"){c1 = obj[pName]}
-    else if (posId == "guard2"){g2 = obj[pName]}
-    else if (posId == "forward2"){f2 = obj[pName]}
-    else if (posId == "center2"){c2 = obj[pName]}
-    else if (posId == "bench1"){b1 = obj[pName]}
-    else if (posId == "bench2"){b2 = obj[pName]}
-    else if (posId == "bench3"){b3 = obj[pName]}
+    if (posId == "guard1"){posObj.g1 = obj[pName]}
+    else if (posId == "forward1"){posObj.f1 = obj[pName]}
+    else if (posId == "center1"){posObj.c1 = obj[pName]}
+    else if (posId == "guard2"){posObj.g2 = obj[pName]}
+    else if (posId == "forward2"){posObj.f2 = obj[pName]}
+    else if (posId == "center2"){posObj.c2 = obj[pName]}
+    else if (posId == "guard3"){posObj.g3 = obj[pName]}
+    else if (posId == "forward3"){posObj.f3 = obj[pName]}
+    else if (posId == "center3"){posObj.c3 = obj[pName]}
+    else if (posId == "bench1"){posObj.b1 = obj[pName]}
+    else if (posId == "bench2"){posObj.b2 = obj[pName]}
+    else if (posId == "bench3"){posObj.b3 = obj[pName]}
       else{
         //console.log(pName+" is not assigned to a position.");
         benchObj[pName] = obj[pName];
       }
   }
   //COMPILE POSITION OBJECT HERE
-  benchObj.up1={3:"sample"};
+  var orderObj={};
+  orderObj.up1={man:{avgSkill: 3}};
   for(var player in benchObj){
-    var i=1
-    //console.log("remaining shooters on bench: " + benchObj[player].shooting);
-    var tempSkill = benchObj[player].avgSkill
-    for(var skill in benchObj["up"+i]){
-      console.log("avg skill is: "+ skill);
-      if (tempSkill > skill){
-        var nextUp = "up"+(i+1);
-        benchObj[nextUp] = benchObj["up"+i];
-        benchObj["up"+i] = benchObj[player];
-        
+    var i=1;
+    console.log("player "+player);
+    var finished = false;
+    var tempSkill = benchObj[player].avgSkill;
+    while(!finished){
+      for(var nameSkill in orderObj["up"+i]){
+        var skill = orderObj["up"+i][nameSkill].avgSkill;
+        console.log("avg skill is: "+ skill);
+        if(!skill){
+          console.log("oops "+ skill);
+          orderObj["up"+i][player] = benchObj[player];
+          finished = "done";
+          break;
+        }
+        if (tempSkill > skill){
+          console.log("temp > skill "+ tempSkill);
+          var nextUp = "up"+(i+1);
+          console.log(nextUp);
+          orderObj[nextUp] = orderObj["up"+i];
+          orderObj["up"+i][player] = benchObj[player];
+          for(var x in orderObj["up"+i]){
+            console.log("current orderObj: " + x);
+          }
+          finished = "done";
+          break;
+        }else{
+          console.log("temp < skill "+ tempSkill);
+          i++;
+          if(i>8){finished = "done";break;}
+        }
       }
-      i++;
     }
-
-    
   }
+  var i = 1;
+  if (!posObj.g1){posObj.g1 = placePosObj(orderObj, posObj, i); i++;}
+  if (!posObj.f1){posObj.f1 = placePosObj(orderObj, posObj, i); i++;}
+  if (!posObj.c1){posObj.c1 = placePosObj(orderObj, posObj, i); i++;}
+  if (!posObj.g2){posObj.g2 = placePosObj(orderObj, posObj, i);}
+  if (!posObj.f2){posObj.f2 = placePosObj(orderObj, posObj, i);}
+  if (!posObj.c2){posObj.c2 = placePosObj(orderObj, posObj, i);}
+  i++;
+  if (!posObj.g3){posObj.g3 = placePosObj(orderObj, posObj, i); }
+  if (!posObj.f3){posObj.f3 = placePosObj(orderObj, posObj, i); }
+  if (!posObj.c3){posObj.c3 = placePosObj(orderObj, posObj, i); }
+  i++;
+  if (!posObj.b1){posObj.b1 = placePosObj(orderObj, posObj, i);i++;}
+  if (!posObj.b2){posObj.b2 = placePosObj(orderObj, posObj, i);i++;}
+  if (!posObj.b3){posObj.b3 = placePosObj(orderObj, posObj, i);i++;}
+  for(var sStat in posObj){
+    console.log("set status: "+sStat);
+    posObj[sStat].curStatus = "bench";
+  }
+  for(var y in posObj){
+    console.log("possition object item: " + y);
+  }
+  return posObj;
+}
+//USED TO FILL EMPTY TEAM POSITIONS.
+function placePosObj(orderObj, obj,i){
+  var tempObj={};
+  for(skill in orderObj["up"+i]){
+    console.log ("orderObj for in: "+skill)
+    // var name = orderObj["up"+i][skill];
+    tempObj[skill] = obj[skill];
+  }
+  return tempObj;
 }
 //ADVANCE DAY AND SIM GAMES.
 function simGames(){
   console.log("sim Games run");
-// determine day of season
-// getTeamMatchups - begin matchup loop
-// get team 1 roster - pull from team array - check injury
-// get team 2 roster
-// start game loop
+  // determine day of season
+  // getTeamMatchups - begin matchup loop
+  // get team 1 roster - pull from team array - check injury
+  // get team 2 roster
+  // start game loop
 
-// post stats to matchup
-// post stats to players
-// back to matchup loop
-// end
+  // post stats to matchup
+  // post stats to players
+  // back to matchup loop
+  // end
   var currentDaySim = leagueArrayComplete.child("currentDay").val();
   var leagueObjectCopy = {currentDay: (currentDaySim+1)};
   leagueArrayComplete.child("matchUps").child(currentDaySim).forEach(function(matchSnap) {
@@ -394,7 +447,7 @@ function simGames(){
     // for(var y in t1){
     //   console.log("remaining object item: " + y);
     // }
-    var t1Pos = findPosition(t1);
+    t1 = findPosition(t1);
 
   });
   console.log("completed matchup loop");
