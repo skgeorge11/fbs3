@@ -188,7 +188,7 @@ function createLeague(num){
     // console.log("running team loop");
     createTeam("league"+num,"team"+i);
   };
-  fireRef.child("leagueArray").child("league"+num).child("team16").child("").set({owner:"rookies",nameAssign:"rookies"});
+  fireRef.child("leagueArray").child("league"+num).child("team16").update({owner:"rookies",nameAssign:"rookies"});
   var tempMatchArray = createMatchups("league"+num);
   fireRef.child('leagueArray').child("league"+num).child("matchUps").set(tempMatchArray);
   joinLeague();
@@ -271,7 +271,7 @@ function addPlayer(source,leagueName,teamName){
     };
   };
 
-  fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({injury:false,injuryLength:1, height : generatePlayer[3], contract: generatePlayer[4], position: generatePlayer[5], weight: generatePlayer[6], age: generatePlayer[7], speed: skillArray[0], shooting: skillArray[1], defence: skillArray[2], ballControl: skillArray[3], endurance: skillArray[4], vision: skillArray[5], clutch: skillArray[6], rebounding: skillArray[7], speedPot: skillArray[8], shootingPot: skillArray[9], defencePot: skillArray[10], ballConPot: skillArray[11], endurPot: skillArray[12], visionPot: skillArray[13], clutchPot: skillArray[14], reboundPot: skillArray[15], avgSkill: generatePlayer[8], avgPot: generatePlayer[9], seasons:1});
+  fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({stats:{game:0,gameStart:0,play:0,point:0,pointer3:0,pointer2:2,dunk:0,freeThrow:0,miss:0,missFt:0,assist:0,board:0,steal:0,block:0,drive:0,turnOver:0,foul:0},injury:false,injuryLength:1, height : generatePlayer[3], contract: generatePlayer[4], position: generatePlayer[5], weight: generatePlayer[6], age: generatePlayer[7], speed: skillArray[0], shooting: skillArray[1], defence: skillArray[2], ballControl: skillArray[3], endurance: skillArray[4], vision: skillArray[5], clutch: skillArray[6], rebounding: skillArray[7], speedPot: skillArray[8], shootingPot: skillArray[9], defencePot: skillArray[10], ballConPot: skillArray[11], endurPot: skillArray[12], visionPot: skillArray[13], clutchPot: skillArray[14], reboundPot: skillArray[15], avgSkill: generatePlayer[8], avgPot: generatePlayer[9], seasons:1});
   // console.log("created player: "+generatePlayer[2]);
 }
 //CHECK IF SIM IS DUE
@@ -449,11 +449,10 @@ function simGames(){
   // end
   var currentDaySim = leagueArrayComplete.child("currentDay").val();
   var leagueObjectCopy = {currentDay: (currentDaySim+1)};
+  //BEGIN MATCH LOOP
   leagueArrayComplete.child("matchUps").child(currentDaySim).forEach(function(matchSnap) {
     var team1Name = matchSnap.key();
     var team2Name = matchSnap.val();
-    // leagueObjectCopy[team1Name] = leagueArrayComplete.child(team1Name).val();//CHANGED LOCATION OF RECORDING GAME
-    //console.log("team1Players owner: "+leagueObjectCopy[team1Name].owner);
     var t1 = {}; 
     t1 = leagueArrayComplete.child(team1Name).val();
     var t2 = {}; 
@@ -466,35 +465,42 @@ function simGames(){
     t1 = findPosition(t1);
     t2 = findPosition(t2);
     var t1G,t1F,t1C,t2G,t2F,t2C;
-    t1G = checkEndur(t1, "g1", t1G);
-    for(var y in t1G){
-      console.log("t1G: " +t1G[y].endurance);
-    }
-    t1F = checkEndur(t1, "f1", t1F);
-    t1C = checkEndur(t1, "c1", t1C);
-    t2G = checkEndur(t2, "g1", t2G);
-    t2F = checkEndur(t2, "f1", t2F);
-    t2C = checkEndur(t2, "c1", t2C);
-    for(var pos in t1){
-      for(var player in t1[pos]){
-        //console.log("default endurance"+ leagueArrayComplete.child(team1Name).child(player).child("endurance").val());
-        if(leagueArrayComplete.child(team1Name).child(player).child("endurance").val() > t1[pos][player].endurance){  
-          t1[pos][player].endurance +=2;
+    //BEGIN GAME LOOP
+    for(var gameLength = 2; gameLength > 0; gameLength-- ){
+      //CHECK EDURANCE ON STARTERS
+      t1G = checkEndur(t1, "g1", t1G);
+      // for(var y in t1G){
+      //   console.log("t1G: play stat: " +t1G[y].stats.play);
+      // }
+      t1F = checkEndur(t1, "f1", t1F);
+      t1C = checkEndur(t1, "c1", t1C);
+      t2G = checkEndur(t2, "g1", t2G);
+      t2F = checkEndur(t2, "f1", t2F);
+      t2C = checkEndur(t2, "c1", t2C);
+      //ADD ENDURANCE TO BENCH (ALTHOUGH TECHNICALY TO ALL PLAYERS SINCE I PLAN TO OVER WRITE STARTERS LATER)
+      for(var pos in t1){
+        for(var player in t1[pos]){
+          //console.log("default endurance"+ leagueArrayComplete.child(team1Name).child(player).child("endurance").val());
+          if(leagueArrayComplete.child(team1Name).child(player).child("endurance").val() > t1[pos][player].endurance){  
+            t1[pos][player].endurance +=2;
+          }
         }
       }
-    }
-    for(var pos in t2){
-      for(var player in t2[pos]){
-        if(leagueArrayComplete.child(team2Name).child(player).child("endurance").val() > t2[pos][player].endurance){  
-          t2[pos][player].endurance +=2;
+      for(var pos in t2){
+        for(var player in t2[pos]){
+          if(leagueArrayComplete.child(team2Name).child(player).child("endurance").val() > t2[pos][player].endurance){  
+            t2[pos][player].endurance +=2;
+          }
         }
       }
+      //BALL IS PASSED INBOUNDS AND DRIBBLED TO POS 3
+      var ballPosition = 3;
+      dribbleCheck(t1G, t2G);
     }
-
-    
+    console.log("completed game loop");
   });
   console.log("completed matchup loop");
-  //fireRef.child("leagueArray").child(leagueArrayComplete.key()).update(leagueObjectCopy);
+  //fireRef.child("leagueArray").child(leagueArrayComplete.key()).set( i dont know yet);
 }
 //CHECK ENDURANCE OF EACH STARTER
 function checkEndur(team, startPos, curPlayer){
@@ -506,6 +512,11 @@ function checkEndur(team, startPos, curPlayer){
        //console.log("current player "+curPlayer[player]["endurance"]);
       if(curPlayer[player].endurance > 1){
         curPlayer[player].endurance -= 1;
+        if(typeof curPlayer[player].stats == 'undefined'){
+          curPlayer[player].stats={};
+          console.log("constructed stats object1");
+        }
+        curPlayer[player].stats.play += 1;
         tempPlayer[player] = curPlayer[player];
         done = true;
       } 
@@ -516,6 +527,11 @@ function checkEndur(team, startPos, curPlayer){
       //console.log("first check"+ team[startPos][target]["endurance"]);
       if (team[startPos][target].endurance > 19){
         team[startPos][target].endurance -= 1;
+        if(typeof team[startPos][target].stats == 'undefined'){
+          team[startPos][target].stats={};
+          console.log("constructed stats object2");
+        }
+        team[startPos][target].stats.play += 1;
         tempPlayer[target] = team[startPos][target];
         done = true;
       }
@@ -530,6 +546,11 @@ function checkEndur(team, startPos, curPlayer){
           //console.log("second check"+ team[possition][target]["endurance"]);
           if (team[possition][target].endurance > 19){
             team[possition][target].endurance -= 1;
+            if(typeof team[possition][target].stats == 'undefined'){
+              team[possition][target].stats={};
+              console.log("constructed stats object3");
+            }
+            team[possition][target].stats.play += 1;
             tempPlayer[target] = team[possition][target];
             done = true;
           }
@@ -541,4 +562,17 @@ function checkEndur(team, startPos, curPlayer){
     console.log("major problem!! no position player started!!!!!!");
   }
   return tempPlayer;
+}
+//CHECK DRIBBLE PAST DEFENDER
+function dribbleCheck(hasBall,defendBall){
+  console.log("dribble check has run.");
+  for(var has in hasBall){
+    console.log("has ball speed: "+ hasBall[has].speed);
+    for(var defend in defendBall){
+      // hasBall[has].speed
+      // hasBall[has].ballControl
+      // defendBall[defend].speed
+      // defendBall[defend].defence
+    }
+  }
 }
