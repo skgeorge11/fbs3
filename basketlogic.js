@@ -12,6 +12,7 @@ var teamCreateName;
 var userId;
 var userPassword;
 var avoidBrokenLoop;
+var t1G;
 console.log("variables reset to null state");
 
 //AUTOMATIC SCRIPT RUN ON LOAD BELOW
@@ -464,7 +465,10 @@ function simGames(){
     // }
     t1 = findPosition(t1);
     t2 = findPosition(t2);
+    t1.score = 0;
+    t2.score = 0;
     var t1G,t1F,t1C,t2G,t2F,t2C;
+    var offencePlay ="t1";
     //BEGIN GAME LOOP
     for(var gameLength = 2; gameLength > 0; gameLength-- ){
       //CHECK EDURANCE ON STARTERS
@@ -494,13 +498,37 @@ function simGames(){
         }
       }
       //BALL IS PASSED INBOUNDS AND DRIBBLED TO POS 3
-      var ballPosition = 3;
-      dribbleCheck(t1G, t2G);
+      
+      if (offencePlay == "t1"){
+        var playResult = runPlay(t1,t2,t1G,t1F,t1C,t2G,t2F,t2C);
+      }
+      else if (offencePlay == "t2"){
+        var playResult = runPlay(t2,t1,t2G,t2F,t2C,t1G,t1F,t1C);
+      }else{
+        console.log("!!! no team on offence!!!");
+      }
     }
     console.log("completed game loop");
   });
   console.log("completed matchup loop");
   //fireRef.child("leagueArray").child(leagueArrayComplete.key()).set( i dont know yet);
+}
+//RUN A PLAY UNTIL TURNOVER
+function runPlay(offTeam,defTeam,offG, offF, offC, defG, defF, defC){
+  var finish = false;
+  var ballPosition = 4;
+  var dribble = dribbleCheck(offG, defG);
+  if (dribble) {
+    //console.log("drible true");
+    for(var y in offG){
+      offG[y].stats.drive += 1;
+      ballPosition -=1;
+      //console.log(offG[y].stats.drive);
+
+    }
+  }else if(!dribble){
+    ///console.log("drible false");
+  }
 }
 //CHECK ENDURANCE OF EACH STARTER
 function checkEndur(team, startPos, curPlayer){
@@ -565,14 +593,27 @@ function checkEndur(team, startPos, curPlayer){
 }
 //CHECK DRIBBLE PAST DEFENDER
 function dribbleCheck(hasBall,defendBall){
-  console.log("dribble check has run.");
+  var noRepeat;
+  //console.log("dribble check has run.");
   for(var has in hasBall){
-    console.log("has ball speed: "+ hasBall[has].speed);
+    //console.log("has ball speed: "+ hasBall[has].speed);
     for(var defend in defendBall){
-      // hasBall[has].speed
-      // hasBall[has].ballControl
-      // defendBall[defend].speed
-      // defendBall[defend].defence
+      if(!noRepeat){
+        var hs = hasBall[has].speed;
+        var hb = hasBall[has].ballControl;
+        var ds = defendBall[defend].speed;
+        var dd = defendBall[defend].defence;
+        var chance = (((hs+hb)-(ds+dd))*.2)+80;
+        //console.log("chance "+chance);
+        var roll = randNum(0,100);
+        if (roll < chance) {
+          return true;
+          noRepeat = 1;
+        }else{
+          return false;
+          noRepeat = 1;
+        }
+      } 
     }
   }
 }
