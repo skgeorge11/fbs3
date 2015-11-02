@@ -220,7 +220,7 @@ function addPlayer(source,leagueName,teamName){
     if(!teamName){generatePlayer.push(userArrayComplete.child("team").val());}
     else{generatePlayer.push(teamName)}
     generatePlayer.push(generateName());
-    generatePlayer.push(nearAverageRandom(72,60,84));
+    generatePlayer.push(nearAverageRandom(76,68,86));
     generatePlayer.push(randNum(1,10));
   }
   // console.log("run add player" + generatePlayer[0]);
@@ -499,7 +499,7 @@ function simGames(){
       }
       //BALL IS PASSED INBOUNDS AND DRIBBLED TO POS 3
       if (offencePlay == "t1"){
-        var playResult = runPlay(t1G,t1F,t1C,t2G,t2F,t2C);
+        var playResult = runPlay(t1G,t1F,t1C,t2G,t2F,t2C,gameLength);
         t1G =  playResult.oG;
         t1F =  playResult.oF;
         t1C = playResult.oC;
@@ -509,7 +509,7 @@ function simGames(){
         //console.log(t1G);
       }
       else if (offencePlay == "t2"){
-        var playResult = runPlay(t2G,t2F,t2C,t1G,t1F,t1C);
+        var playResult = runPlay(t2G,t2F,t2C,t1G,t1F,t1C,gameLength);
         t1G =  playResult.dG;
         t1F =  playResult.dF;
         t1C = playResult.dC;
@@ -527,7 +527,7 @@ function simGames(){
   //fireRef.child("leagueArray").child(leagueArrayComplete.key()).set( i dont know yet);
 }
 //LOOP A PLAY UNTIL TURNOVER
-function runPlay(offG, offF, offC, defG, defF, defC){
+function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
   //console.log(offG);
   var decision;
   var fastBreak=false;
@@ -535,7 +535,7 @@ function runPlay(offG, offF, offC, defG, defF, defC){
   var finish={};
   var gameObj={};
   //HAVE GUARD DRIBLE ACROSS HALF COURT.
-  var dribble = dribbleCheck(offG, defG);
+  var dribble = dribbleCheck(offG, defG,gameLength);
   if (dribble) {
     console.log("drible true");
     for(var y in offG){
@@ -557,7 +557,7 @@ function runPlay(offG, offF, offC, defG, defF, defC){
   else{console.log("!!!warning. dribble function returned niether true nor false.");
   }
   //GUARD HAS MADE TO HALFCOURT, NOW VISION CHECK
-  decision = runVisionCheck(offG,defG);
+  decision = runVisionCheck(offG,defG, gameLength, ballPosition);
 
   gameObj = {oG:offG,oF:offF,oC:offC,dG:defG,dF:defF,dC:defC}
   return gameObj;
@@ -624,22 +624,26 @@ function checkEndur(team, startPos, curPlayer){
   return tempPlayer;
 }
 //CHECK DRIBBLE PAST DEFENDER
-function dribbleCheck(hasBall,defendBall){
+function dribbleCheck(hasBall,defendBall,gameLength){
   var noRepeat;
   //console.log("dribble check has run.");
   for(var has in hasBall){
     //console.log("has ball speed: "+ hasBall[has].speed);
+    var hc = 0;
+    if(gameLength<40){hc = (hasBall[has].clutch)/5;}
     var hs = hasBall[has].speed;
     var hb = hasBall[has].ballControl;
     for(var defend in defendBall){
       if(!noRepeat){
+        var dc = 0;
+        if(gameLength<40){dc = (defendBall[defend].clutch)/5;}
         var ds = defendBall[defend].speed;
         var dd = defendBall[defend].defence;
-        var chance = (((hs+hb)-(ds+dd))*.2)+80;
+        var chance = (((hs+hb+hc)-(ds+dd+dc))*.2)+74;
         //console.log("chance "+chance);
         var roll = randNum(0,100);
         if (roll < chance) {
-          return true;
+          return chance;
           noRepeat = 1;
         }else{
           return false;
@@ -657,20 +661,114 @@ function runFastBreak(player){
   return player;
 }
 //CHECK IF THE POSITION PLAYER PASSES HIS VISION CHECK
-function runVisionCheck(offG,defG){
+function runVisionCheck(offP,defP,gameLength, ballPosition){
   var decision = "pass";
   var vision;
-  for (x in offG){
-    vision = offG[x].vision;
+  var duelResult;
+  var duelObj={};
+  for (x in offP){
+    var oc = 0;
+    if(gameLength<40){oc = (offP[x].clutch)/5;}
+    vision = (offP[x].vision)+oc;
     var check = randNum(0,100);
     if (vision > check){
       //CHECK TO SEE IF THE OFF HAS A GOOD CHANCE TO SHOOT OR DRIVE. ELSE PASS
-
+      var checkPass = runPassBall(offP,defP, gameLength);
+      var checkDribble= dribbleCheck(offP,defP, gameLength);
+      var checkShot = 2*(runShootBall(offP,defP, gameLength, ballPosition));
+      var refNum =0;
+      if (checkPass){refNum = checkPass;}
+      else if (checkDribble && checkDribble > refNum){
+        refNum = checkDribble;
+        decision = "dribble";
+      }
+      else if (checkShot && checkShot > refNum){ decision = "shot";}
+      else {console.log("vision check passed, but no decision made");}
+    //IF THE VISION CHECK FAILED. NORMAL DECISION MAKING BELOW.
     } else{
-
+      var refNum = randNum(1,3);
+      if (refNum == 1 && ballPosition != 1){decision = "pass";}
+      else if (refNum == 2){decision = "dribble";}
+      else if (refNum == 3){ decision = "shot";}
+      else{console.log("vision check failed, but no decision made by rand num.");}
     }
   }
-  return decision;
+  if(decision =="pass"){
+    duelResult = runPassBall(offP,defP,gameLength);
+    if(duelResult){}
+    else{}
+  }
+  if(decision =="dribble"){
+    duelResult = dribbleCheck(offP,defP,gameLength);
+    if(duelResult){}
+    else{}
+  }
+  if(decision =="shot"){
+    duelResult = runShootBall(offP,defP,gameLength, ballPosition);
+    if(duelResult){}
+    else{}
+  }
+  return duelObj;
 }
 //PASS THE BALL
+function runPassBall(hasBall,defendBall, gameLength){
+  var noRepeat;
+  //console.log("dribble check has run.");
+  for(var has in hasBall){
+    //console.log("has ball speed: "+ hasBall[has].speed);
+    var hc = 0;
+    if(gameLength<40){hc = (hasBall[has].clutch)/5;}
+    var hv = hasBall[has].vision;
+    var hb = hasBall[has].ballControl;
+    for(var defend in defendBall){
+      if(!noRepeat){
+        var dc = 0;
+        if(gameLength<40){dc = (defendBall[defend].clutch)/5;}
+        var dv = defendBall[defend].vision;
+        var dd = defendBall[defend].defence;
+        var chance = (((hv+hb+hc)-(dv+dd+dc))*.2)+74;
+        //console.log("chance "+chance);
+        var roll = randNum(0,100);
+        if (roll < chance) {
+          return chance;
+          noRepeat = 1;
+        }else{
+          return false;
+          noRepeat = 1;
+        }
+      }
+    }
+  }
+}
 //SHOOT THE BALL
+function runShootBall(hasBall,defendBall,gameLength,ballPosition){
+  var noRepeat;
+  var bp = ballPosition*10;
+  console.log("shooting bp mod: "+bp);
+  for(var has in hasBall){
+    //console.log("has ball speed: "+ hasBall[has].speed);
+    var hc = 0;
+    if(gameLength<40){hc = (hasBall[has].clutch)/3;}
+    var hs = hasBall[has].shooting;
+    var hh = hasBall[has]["height"];
+    for(var defend in defendBall){
+      if(!noRepeat){
+        var dc = 0;
+        if(gameLength<40){dc = (defendBall[defend].clutch)/3;}
+        var dh = defendBall[defend]["height"];
+        var dd = defendBall[defend].defence;
+        var adjH = (2/ballPosition)*(hh-dh);
+        var chance = (((hs+hc)-(dd+dc))*.3) + (60 - bp) + adjH;
+        //console.log("chance "+chance);
+        var roll = randNum(0,100);
+        if (roll < chance) {
+          return chance;
+          noRepeat = 1;
+        }else{
+          return false;
+          noRepeat = 1;
+        }
+      }
+    }
+  }
+}
