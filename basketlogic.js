@@ -272,7 +272,7 @@ function addPlayer(source,leagueName,teamName){
     };
   };
 
-  fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({stats:{game:0,gameStart:0,play:0,point:0,fBPoint:0,pointer3:0,pointer2:0,dunk:0,freeThrow:0,miss:0,missFt:0,assist:0,board:0,steal:0,block:0,drive:0,turnOver:0,foul:0},injury:false,injuryLength:1, height : generatePlayer[3], contract: generatePlayer[4], position: generatePlayer[5], weight: generatePlayer[6], age: generatePlayer[7], speed: skillArray[0], shooting: skillArray[1], defence: skillArray[2], ballControl: skillArray[3], endurance: skillArray[4], vision: skillArray[5], clutch: skillArray[6], rebounding: skillArray[7], speedPot: skillArray[8], shootingPot: skillArray[9], defencePot: skillArray[10], ballConPot: skillArray[11], endurPot: skillArray[12], visionPot: skillArray[13], clutchPot: skillArray[14], reboundPot: skillArray[15], avgSkill: generatePlayer[8], avgPot: generatePlayer[9], seasons:1});
+  fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({stats:{game:0,gameStart:0,play:0,point:0,fBPoint:0,pointer3:0,pointer2:0,dunk:0,freeThrow:0,miss:0, miss3:0,missFt:0,assist:0,board:0,steal:0,block:0,drive:0,turnOver:0,foul:0},injury:false,injuryLength:1, height : generatePlayer[3], contract: generatePlayer[4], position: generatePlayer[5], weight: generatePlayer[6], age: generatePlayer[7], speed: skillArray[0], shooting: skillArray[1], defence: skillArray[2], ballControl: skillArray[3], endurance: skillArray[4], vision: skillArray[5], clutch: skillArray[6], rebounding: skillArray[7], speedPot: skillArray[8], shootingPot: skillArray[9], defencePot: skillArray[10], ballConPot: skillArray[11], endurPot: skillArray[12], visionPot: skillArray[13], clutchPot: skillArray[14], reboundPot: skillArray[15], avgSkill: generatePlayer[8], avgPot: generatePlayer[9], seasons:1});
   // console.log("created player: "+generatePlayer[2]);
 }
 //CHECK IF SIM IS DUE
@@ -529,7 +529,7 @@ function simGames(){
 //LOOP A PLAY UNTIL TURNOVER
 function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
   //console.log(offG);
-  var decision;
+  var visionResult={};
   var fastBreak=false;
   var ballPosition = 4;
   var finish={};
@@ -557,8 +557,9 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
   else{console.log("!!!warning. dribble function returned niether true nor false.");
   }
   //GUARD HAS MADE TO HALFCOURT, NOW VISION CHECK
-  decision = runVisionCheck(offG,defG, gameLength, ballPosition);
+  visionResult = runVisionCheck(offG,defG, gameLength, ballPosition);
 
+  //FINALLY, RETURN OBJ TO GAME LOOP
   gameObj = {oG:offG,oF:offF,oC:offC,dG:defG,dF:defF,dC:defC}
   return gameObj;
 }
@@ -698,16 +699,32 @@ function runVisionCheck(offP,defP,gameLength, ballPosition){
     if(duelResult){}
     else{}
   }
-  if(decision =="dribble"){
+  else if(decision =="dribble"){
     duelResult = dribbleCheck(offP,defP,gameLength);
     if(duelResult){}
     else{}
   }
-  if(decision =="shot"){
+  else if(decision =="shot"){
     duelResult = runShootBall(offP,defP,gameLength, ballPosition);
-    if(duelResult){}
-    else{}
+    if(duelResult){
+      for(x in offP){
+        if(ballPosition > 2){
+          offP[x].stats.point +=3;
+          offP[x].stats.pointer3 +=1;
+        }
+      }
+      for(x in defP){defP[x].stats.block +=1;}
+    }
+    else{
+      for(x in offP){
+        if (ballPosition<3){offP[x].stats.miss +=1;}
+        else{offP[x].stats.miss3 +=1;}
+      }
+      for(x in defP){defP[x].stats.block +=1;}
+      //REBOUNDING SCRIPT.
+    }
   }
+  else{console.log("!!!!WARNING, NO DECISION FOUND WITHIN THE VISION CHECK!!!")}
   return duelObj;
 }
 //PASS THE BALL
