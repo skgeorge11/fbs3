@@ -105,7 +105,7 @@ function teamGlanceFill(teamName){
   if(leagueArrayComplete){
     leagueArrayComplete.child(teamPoint).forEach(function(teamSnap) {
       var playerInfo=[];
-      if(teamSnap.key() != "owner"){
+      if(teamSnap.key() != "owner" && teamSnap.key() != "nameAssign"){
         teamSnap.forEach(function(playerSnap) {
           playerInfo.push(playerSnap.val());
         });
@@ -199,7 +199,7 @@ function createTeam(leagueName,teamName){
   // console.log("strings passed to create team: " +leagueName +teamName);
   var tempTeam;
   fireRef.child('leagueArray').child(leagueName).child(teamName).set({owner:"compAI",nameAssign:"BlueSocks"});
-  for (var i = 7; i >= 0; i--) {
+  for (var t = 0; t < 8; t++) {
     // console.log("running player loop");
     addPlayer(0,leagueName,teamName);
   };
@@ -520,9 +520,7 @@ function simGames(){
         t2C = playResult.oC;
         if (playResult.side == "off") {offencePlay ="t2";}
         else{offencePlay ="t1";}
-      }else{
-        console.log("!!! Warning, no team on offence!!!");
-      }
+      }else{console.log("!!! Warning, no team on offence!!!");}
 
     }
     console.log("completed game loop");
@@ -538,6 +536,7 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
   var ballPosition = 4;
   var gameObj={score:0};
   var fastResult ={};
+  var playersInQ = {offP:offG, defP:defG,assist:false, pos:"G"};
   //HAVE GUARD DRIBLE ACROSS HALF COURT.
   var dribble = dribbleCheck(offG, defG,gameLength);
   if (dribble) {
@@ -568,41 +567,43 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
         break;
       };
   }else{console.log("!!!warning. dribble function returned niether true nor false.!!!");}
+
   //GUARD HAS MADE TO HALFCOURT, NOW BEGIN OFFENSE LOOP
-  if (ballPosition > 3){ballPosition = 3;console.log("!!!WARNING, BALLPOSTION WAS STILL 4!!!")}
   for (var finish = 20; finish > 0; finish--) {
-    var assist =false;
-    visionResult = runVisionCheck(offG,defG, gameLength, ballPosition, assist);
+    if (ballPosition > 3){ballPosition = 3;console.log("!!!WARNING, BALLPOSTION WAS STILL 4!!!");}
+    visionResult = runVisionCheck(playersInQ.offP,playersInQ.defP, gameLength, ballPosition, playersInQ.assist);
     // GUARD HAS EITHER LOST THE BALL, DRIBBLED, PASSED OR SHOT
-    offG = visionResult.offP;
-    defG = visionResult.defP;
+    playersInQ.offP = visionResult.offP;
+    playersInQ.defP = visionResult.defP;
     gameObj.score += visionResult.score;
     //CHANGE OF POSSESION, WITH OR WITHOUT FAST BREAK
     if (visionResult.side){
       if(visionResult.fB){
-          fastResult = runFastBreak(defG, offG, gameLength);
+          fastResult = runFastBreak(playersInQ.defP, playersInQ.offP, gameLength);
           gameObj.score += fastResult.score;
-          defG = fastResult.offP;
-          offG = fastResult.defP;
+          playersInQ.defP = fastResult.offP;
+          playersInQ.offP = fastResult.defP;
           gameObj.side = "off";
           if (!fastResult.side){
-            gameObj.oG = offG;
-            gameObj.oF = offF;
-            gameObj.oC = offC;
-            gameObj.dG = defG;
-            gameObj dF= defF;
-            gameObj dC= defC;
+            if(typeof playersInQ.pos == 'undefined'){console.log("!!!!WARNING, V.SIDE PLAYERSINQ.POS EMPTY!!!");}
+            if (playersInQ.pos == "G"){gameObj.oG = playersInQ.offP; gameObj.dG = playersInQ.defP;}
+            else{gameObj.oG = offG; gameObj.dG = defG;}
+            if (playersInQ.pos == "F"){gameObj.oF = playersInQ.offP; gameObj.dF = playersInQ.defP;}
+            else{gameObj.oF = offF; gameObj.dF = defF;}
+            if (playersInQ.pos == "C"){gameObj.oC = playersInQ.offP; gameObj.dC = playersInQ.defP;}
+            else{gameObj.oC = offC; gameObj.dFC = defC;}
             return gameObj;
             break;
           }
       }else{
         gameObj.side = "def"; //DEFENSE WILL HAVE THE BALL AND BECOME OFFENSE
-        gameObj.oG = offG;
-        gameObj.oF = offF;
-        gameObj.oC = offC;
-        gameObj.dG = defG;
-        gameObj dF= defF;
-        gameObj dC= defC;
+        if(typeof playersInQ.pos == 'undefined'){console.log("!!!!WARNING, V.SIDE PLAYERSINQ.POS EMPTY!!!");}
+        if (playersInQ.pos == "G"){gameObj.oG = playersInQ.offP; gameObj.dG = playersInQ.defP;}
+        else{gameObj.oG = offG; gameObj.dG = defG;}
+        if (playersInQ.pos == "F"){gameObj.oF = playersInQ.offP; gameObj.dF = playersInQ.defP;}
+        else{gameObj.oF = offF; gameObj.dF = defF;}
+        if (playersInQ.pos == "C"){gameObj.oC = playersInQ.offP; gameObj.dC = playersInQ.defP;}
+        else{gameObj.oC = offC; gameObj.dFC = defC;}
         return gameObj;
         break;
       }
@@ -610,48 +611,63 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
     //OFFENSE FAST BREAK
     else if(!visionResult.side && visionResult.fB){
       console.log("offence fast break");
-      fastResult = runFastBreak(offG, defG, gameLength);
+      fastResult = runFastBreak(playersInQ.offP, playersInQ.defP, gameLength);
       gameObj.score += fastResult.score;
       gameObj.side = "def"; //DEFENSE WILL HAVE THE BALL AND BECOME OFFENSE
-      gameObj.oG = fastResult.offP;
-      gameObj.oF = offF;
-      gameObj.oC = offC;
-      gameObj.dG = fastResult.defP;
-      gameObj dF= defF;
-      gameObj dC= defC;
+      playersInQ.offP = fastResult.offP;
+      playersInQ.defP = fastResult.defP;
+      if(typeof playersInQ.pos == 'undefined'){console.log("!!!!WARNING, V.SIDE PLAYERSINQ.POS EMPTY!!!");}
+      if (playersInQ.pos == "G"){gameObj.oG = playersInQ.offP; gameObj.dG = playersInQ.defP;}
+      else{gameObj.oG = offG; gameObj.dG = defG;}
+      if (playersInQ.pos == "F"){gameObj.oF = playersInQ.offP; gameObj.dF = playersInQ.defP;}
+      else{gameObj.oF = offF; gameObj.dF = defF;}
+      if (playersInQ.pos == "C"){gameObj.oC = playersInQ.offP; gameObj.dC = playersInQ.defP;}
+      else{gameObj.oC = offC; gameObj.dFC = defC;}
       return gameObj;
       break;
     }
     //REBOUND TO DETERMINE POSSESION AND BALL POSITION.
     else if(visionResult.rebound){
       fastResult = runRebound(offG, offF, offC, defG, defF, defC, gameLength, ballPosition);
+      if (fastResult.bP <= 1){playersInQ.offP=fastResult.oC; playersInQ.defP=fastResult.dC; playersInQ.pos="C";}
+      else if (fastResult.bP == 2){playersInQ.offP=fastResult.oF; playersInQ.defP=fastResult.dF; playersInQ.pos="F";}
+      else if (fastResult.bP == 3){playersInQ.offP=fastResult.oG; playersInQ.defP=fastResult.dG; playersInQ.pos="G";}
+      else{console.log("!!!!WARNING, REBOUND BALL POSTION NOT WITHIN RANGE!!!");}
       gameObj.side = fastResult.side;
       gameObj.oG = fastResult.oG;
       gameObj.oF = fastResult.oF;
       gameObj.oC = fastResult.oC;
       gameObj.dG = fastResult.dG;
-      gameObj dF= fastResult.dF;
-      gameObj dC= fastResult.dC;
+      gameObj.dF= fastResult.dF;
+      gameObj.dC= fastResult.dC;
       if(gameObj.side =="def") {
         console.log(" defence rebounded. gameObj being returned: "); console.log(gameObj);
         return gameObj;
+        break;
       }
     }
     //SUCCESFUL PASS, POSSIBLE ASSIST.
-    else if(visionResult.assist){
-
+    else if(typeof visionResult.assist != 'undefined'){
+      fastResult = visionResult.assist;
+      ballPosition = randNum(1,2); //TEMPORARILY BORROWING BALLpOSITION
+      if (ballPosition ==1){playersInQ={offP:offC,defP:defC, assist:fastResult, pos:"C"};}
+      else if (ballPosition == 2){playersInQ={offP:offF,defP:defF, assist:fastResult, pos:"F"};}
+      else{console.log("!!!WARNING, AFTER PASS NO PLAYER RECIEVED!!!");}
+      ballPosition = randNum(0,2); //OK, ACTUAL BALL POSITION AFTER PASS IS FOUND.
+      for(var x in playersInQ.assist){ console.log ("assist opprortunity for "+playersInQ["assist"][x]+". Passed to "+playersInQ.pos);}
     }
     //ERROR WARNING
     else{console.log("!!!WARNING. NO VISION RESULT FOUND!!!");}
   }//END OF PLAY LOOP
 
   //FINALLY, RETURN OBJ TO GAME LOOP. INCLUDE .SIDE TO NOTE WHO HAS BALL NEXT.
-  gameObj.oG = offG;
-  gameObj.oF = offF;
-  gameObj.oC = offC;
-  gameObj.dG = defG;
-  gameObj dF= defF;
-  gameObj dC= defC;
+  if(typeof playersInQ.pos == 'undefined'){console.log("!!!!WARNING, V.SIDE PLAYERSINQ.POS EMPTY!!!");}
+  if (playersInQ.pos == "G"){gameObj.oG = playersInQ.offP; gameObj.dG = playersInQ.defP;}
+  else{gameObj.oG = offG; gameObj.dG = defG;}
+  if (playersInQ.pos == "F"){gameObj.oF = playersInQ.offP; gameObj.dF = playersInQ.defP;}
+  else{gameObj.oF = offF; gameObj.dF = defF;}
+  if (playersInQ.pos == "C"){gameObj.oC = playersInQ.offP; gameObj.dC = playersInQ.defP;}
+  else{gameObj.oC = offC; gameObj.dFC = defC;}
   return gameObj;
 }
 
@@ -878,7 +894,8 @@ function runVisionCheck(offP,defP,gameLength, ballPosition, assist){
 //PASS THE BALL. RETURNS PASSoBJ WITH .CHANCE = PERCENT NUMBER. AND .oP as player obj
 function runPassBall(hasBall,defendBall, gameLength){
   var noRepeat;
-  var passObj.oP = hasBall;
+  var passObj ={};
+  passObj.oP = hasBall;
   //console.log("dribble check has run.");
   for(var has in hasBall){
     //console.log("has ball speed: "+ hasBall[has].speed);
@@ -962,6 +979,7 @@ function runRebound(offG, offF, offC, defG, defF, defC, gameLength, ballPosition
     result.dG = duelResult.defP;
   }
   else{console.log("!!!!WARNING, RUN REBOUND CHANCE NUMBER OUTSIDE RANGE!!!" + chance);}
+  result.bP = chance;
   result.side = duelResult.side;
   if(result.side == "off" && chance <1){//THE OFF CENTER HAS AT BP 0, SO HE SLAM DUNKS.
     for(var x in result.oC){
@@ -977,7 +995,8 @@ function runRebound(offG, offF, offC, defG, defF, defC, gameLength, ballPosition
 //REBOUNDING HELPER FUNCTION. RETURNS OBJ WITH .SIDE AND BOTH PLAYERS IN QUESTION
 function reboundDuel(offP, defP, gameLength){
   var chance, oR, oH, oC, dR, dH, dC, adjH, roll = 0;
-  var duelObj.offP = offP;
+  var duelObj={};
+  duelObj.offP = offP;
   duelObj.defP = defP;
   for(var x in offP){
     for(var y in defP){
