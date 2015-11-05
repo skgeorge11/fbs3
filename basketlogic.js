@@ -459,6 +459,23 @@ function placePosObj(orderObj, obj,i){
   }
   return tempObj;
 }
+function moveToBench(benchObj, teamObj){
+  var finish =  false;
+  var changedTeam = teamObj;
+  for(var benchP in benchObj){
+    for(var pos in team){
+      for(var teamP in team[pos]){
+        if (benchP == teamP){
+          changedTeam[pos][teamP] = benchObj[benchP];
+          console.log(benchP+" has been saved to the team possition "+pos);
+          finish = true;
+          return changedTeam;
+        }
+      }
+    }
+  }
+  if (!finish){alert("ERROR: EXHAUSTED STARTER NOT SAVED TO TEAM ARRAY.");}
+}
 //ADVANCE DAY AND SIM GAMES.
 function simGames(){
   console.log("sim Games run");
@@ -498,21 +515,26 @@ function simGames(){
     //BEGIN GAME LOOP
     for(var gameLength = 5; gameLength > 0; gameLength-- ){
       //CHECK EDURANCE ON STARTERS
-      tempObj= checkEndur(t1, "g1", t1G);
-      if (typeof tempObj.bench == "object"){}
+      tempObj= checkEndur(t1, "g", t1G);
+      if (typeof tempObj.bench == "object"){t1 =moveToBench(tempObj.bench, t1);}
       t1G= tempObj.sub;
-      tempObj = checkEndur(t1, "f1", t1F);
+      tempObj = checkEndur(t1, "f", t1F);
+      if (typeof tempObj.bench == "object"){t1 =moveToBench(tempObj.bench, t1);}
       t1F= tempObj.sub;
-      tempObj = checkEndur(t1, "c1", t1C);
+      tempObj = checkEndur(t1, "c", t1C);
+      if (typeof tempObj.bench == "object"){t1 =moveToBench(tempObj.bench, t1);}
       t1C= tempObj.sub;
-      tempObj = checkEndur(t2, "g1", t2G);
+      tempObj = checkEndur(t2, "g", t2G);
+      if (typeof tempObj.bench == "object"){t2 =moveToBench(tempObj.bench, t2);}
       t2G= tempObj.sub;
-      tempObj = checkEndur(t2, "f1", t2F);
+      tempObj = checkEndur(t2, "f", t2F);
+      if (typeof tempObj.bench == "object"){t2 =moveToBench(tempObj.bench, t2);}
       t2F= tempObj.sub;
-      tempObj = checkEndur(t2, "c1", t2C);
+      tempObj = checkEndur(t2, "c", t2C);
+      if (typeof tempObj.bench == "object"){t2 =moveToBench(tempObj.bench, t2);}
       t2C= tempObj.sub;
       console.log("t1G after endurance check, object below:"); console.log(t1G);
-      //ADD ENDURANCE TO BENCH (ALTHOUGH TECHNICALY TO ALL PLAYERS SINCE I PLAN TO OVER WRITE STARTERS LATER)
+      //ADD ENDURANCE TO BENCH
       for(var pos in t1){
         for(var player in t1[pos]){
           //console.log("default endurance"+ leagueArrayComplete.child(team1Name).child(player).child("endurance").val());
@@ -521,6 +543,7 @@ function simGames(){
           }
         }
       }
+      console.log("t1G after endurance check (should not have changed), object below:"); console.log(t1G);
       for(var pos in t2){
         for(var player in t2[pos]){
           if(leagueArrayComplete.child(team2Name).child(player).child("endurance").val() > t2[pos][player].endurance){
@@ -528,7 +551,8 @@ function simGames(){
           }
         }
       }
-      //BALL IS PASSED INBOUNDS AND DRIBBLED TO POS 3
+      //BALL IS PASSED INBOUNDS AND OFFENSE TRIES TO SCORE.
+      console.log (offencePlay+" is on offence.");
       if (offencePlay == "t1"){
         playResult = runPlay(t1G,t1F,t1C,t2G,t2F,t2C,gameLength);
         t1G =  playResult.oG;
@@ -555,7 +579,7 @@ function simGames(){
         else{offencePlay ="t1";}
         if (playResult.score < 0){gameStats.t1Score -= playResult.score;}// NEGATIVE REPRESENTS DEF SCORE.
         else{gameStats.t2Score += playResult.score;}
-      }else{console.log("!!! Warning, no team on offence!!!");}
+      }else{alert("!!! Warning, no team on offence!!!");}
 
     }
     console.log("completed game loop");
@@ -575,35 +599,31 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
   //HAVE GUARD DRIBLE ACROSS HALF COURT.
   var dribble = dribbleCheck(offG, defG,gameLength);
   if (dribble) {
-    console.log("drible true");
     for(var y in offG){
       offG[y].stats.drive += 1;
-      ballPosition -=1;
-      //console.log(offG[y].stats.drive);
+      console.log( y+" dribbled the ball past halfcourt, now setting up off play. stats obj below:");
+      console.log(offG[y]["stats"]);
     }
   }else if(!dribble){
-    ///console.log("drible false");
-      for(var y in offG){
-        offG[y].stats.turnOver += 1;
+      for(var x in offG){
+        offG[x].stats.turnOver += 1;
       }
       for(var y in defG){
         defG[y].stats.steal += 1;
-        console.log("defG stole the ball. start fast break.");
+        console.log( y+" stole the ball.  and starts fast break.");
       }
       fastResult = runFastBreak(defG, offG, gameLength);
       defG = fastResult.offP;//REVERSED BECAUSE OF THE INTERACTION WITH FAST BREAK FUNCTION
       offG = fastResult.defP;
-      gameObj.score += fastResult.score;
-      if (!fastResult.side){
-        console.log("G stole it and scored before getting to halfcourt");
+      if (typeof fastResult.side == 'undefined'){
         gameObj = {oG:offG,oF:offF,oC:offC,dG:defG,dF:defF,dC:defC};
         gameObj.side = "off";
         gameObj.score -= 2;
+        console.log("Def scored "+gameObj.score+" points.");
         return gameObj;
-        //break;
-      };
-  }else{console.log("!!!warning. dribble function returned niether true nor false.!!!");}
-
+      }else{console.log("Offense stole the ball back and is now beginning to run thier play.");}
+  }else{alert("!!!warning. dribble function returned niether true nor false.!!!");}
+  ballPosition = 3;
   //GUARD HAS MADE TO HALFCOURT, NOW BEGIN OFFENSE LOOP
   for (var finish = 20; finish > 0; finish--) {
     if (ballPosition > 3){ballPosition = 3;console.log("!!!WARNING, BALLPOSTION WAS STILL 4!!!");}
@@ -686,14 +706,16 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
     else if(typeof visionResult.assist != 'undefined'){
       fastResult = visionResult.assist;
       ballPosition = randNum(1,2); //TEMPORARILY BORROWING BALLpOSITION
-      if (ballPosition ==1){playersInQ={offP:offC,defP:defC, assist:fastResult, pos:"C"};}
-      else if (ballPosition == 2){playersInQ={offP:offF,defP:defF, assist:fastResult, pos:"F"};}
-      else{console.log("!!!WARNING, AFTER PASS NO PLAYER RECIEVED!!!");}
+      if (ballPosition ==1){playersInQ={offP:offC,defP:defC, assist:fastResult.oP, pos:"C"};}
+      else if (ballPosition == 2){playersInQ={offP:offF,defP:defF, assist:fastResult.oP, pos:"F"};}
+      else{alert("!!!WARNING, AFTER PASS NO PLAYER RECIEVED!!!");}
       ballPosition = randNum(0,2); //OK, ACTUAL BALL POSITION AFTER PASS IS FOUND.
-      for(var x in playersInQ.assist){ console.log ("assist opprortunity for "+playersInQ["assist"][x]+". Passed to "+playersInQ.pos);}
+      for(var x in playersInQ.assist){
+        console.log ("assist opprortunity for "+playersInQ["assist"][x]+". Passed to "+playersInQ.pos);
+      }
     }
     //ERROR WARNING
-    else{console.log("!!!WARNING. NO VISION RESULT FOUND!!!");}
+    else{alert("!!!WARNING. NO VISION RESULT FOUND!!!");}
   }//END OF PLAY LOOP
 
   //FINALLY, RETURN OBJ TO GAME LOOP. INCLUDE .SIDE TO NOTE WHO HAS BALL NEXT.
@@ -710,12 +732,14 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
 //CHECK ENDURANCE OF EACH STARTER
 function checkEndur(team, startPos, curPlayer){
   var done = false;
+  var curPlayerName;
   var tempPlayer={sub:0};
   if(typeof curPlayer != 'undefined'){
     for(var player in curPlayer){
+      curPlayerName = player;
       console.log(player+" is already assigned to the position "+startPos+". His endurance is "+curPlayer[player]["endurance"]);
       if(curPlayer[player].endurance > 1){
-        curPlayer[player].endurance -= 0.6;
+        curPlayer[player].endurance -= (6/10);
         curPlayer[player].stats.play += 1;
         tempPlayer.sub = curPlayer;
         done = true;
@@ -727,22 +751,24 @@ function checkEndur(team, startPos, curPlayer){
     }
   }
   if (!done){
-    for(var target in team[startPos]){
-      if (team[startPos][target].endurance > 19){
-        team[startPos][target].endurance -= 0.6;
-        team[startPos][target].stats.play += 1;
-        tempPlayer.sub = team[startPos];
-        console.log(target+" is assigned to the position "+startPos+". His endurance is "+team[startPos][target]["endurance"]);
-        done = true;
-        return tempPlayer;
+    for(i=1; i<4; i++){
+      for(var target in team[startPos + i ]){
+        if (team[startPos + i ][target].endurance > 19 && curPlayerName != target && !done){
+          team[startPos + i ][target].endurance -= 0.6;
+          team[startPos + i ][target].stats.play += 1;
+          tempPlayer.sub = team[startPos + i ];
+          console.log(target+" is assigned to the position "+startPos+". His endurance is "+team[startPos+i][target]["endurance"]);
+          done = true;
+          return tempPlayer;
+        }
       }
     }
   }
   if (!done){
     for(var position in team){
-      if(position != "f1" && position != "f2" && position != "f3" && position != "c1" && position != "c2" && position != "c3"){
+      if(position == "b1" || position == "b2" || position == "b3"){
         for(var target in team[position]){
-          if (team[possition][target].endurance > 19){
+          if (team[possition][target].endurance > 19 && target != curPlayerName){
             team[possition][target].endurance -= 0.6;
             team[possition][target].stats.play += 1;
             console.log(target+" is called off the bench, to the position "+startPos);
@@ -798,7 +824,7 @@ function runFastBreak(offP, defP, gameLength){
       offP[x].stats.point +=2;
     }
     //for(var x in defP){defP[x].stats.allow +=1;}
-    fastObj.score +=1;
+    fastObj.score +=2;
   }else{
     for(var x in offP){offP[x].stats.turnOver +=1;}
     for(var x in defP){defP[x].stats.steal +=1;}
@@ -811,6 +837,8 @@ function runFastBreak(offP, defP, gameLength){
 //CHECK IF THE POSITION PLAYER PASSES HIS VISION CHECK. . RETURN OBJ INCLUEDS .SIDE IF DEFENSE HAS THE BALL> .fB IF FAST BREAK> .REBOUND
 function runVisionCheck(offP,defP,gameLength, ballPosition, assist){
   var decision = "pass";
+  var checkDribble;
+  var checkShot;
   var vision;
   var duelResult;
   var duelObj={score:0};
@@ -827,36 +855,45 @@ function runVisionCheck(offP,defP,gameLength, ballPosition, assist){
         checkObj = runPassBall(offP,defP, gameLength);
         checkPass = checkObj.check;
       }
-      var checkDribble= dribbleCheck(offP,defP, gameLength);
-      var checkShot = 2*(runShootBall(offP,defP, gameLength, ballPosition));
+      checkDribble= dribbleCheck(offP,defP, gameLength);
+      checkShot = 2*(runShootBall(offP,defP, gameLength, ballPosition));
       if(ballPosition <1){checkShot = 200;}
       var refNum =0;
-      if (checkPass){refNum = checkPass;}
-      else if (checkDribble && checkDribble > refNum){
+      if (checkPass){
+        refNum = checkPass;
+        decision = "pass";
+      }
+      if (checkDribble && checkDribble > refNum){
         refNum = checkDribble;
         decision = "dribble";
       }
-      else if (checkShot && checkShot > refNum){ decision = "shot";}
-      else {console.log("vision check passed, but no decision made");}
+      if (checkShot && checkShot > refNum){ decision = "shot";}
+      console.log("vision check passed, decision is: "+ decision);
+
     //IF THE VISION CHECK FAILED. NORMAL DECISION MAKING BELOW.
     } else{
       var refNum = randNum(1,3);
       if (refNum == 1 && ballPosition > 1){decision = "pass";}
       else if (refNum == 2 && ballPosition > 0){decision = "dribble";}
       else if (refNum == 3){ decision = "shot";}
-      else{console.log("vision check failed, but no decision made by rand num.");}
+      else{alert("vision check failed, but no decision made by rand num.");}
+      console.log("vision check failed, random decision is "+ decision);
     }
   }
   if(decision =="pass"){
     checkObj = runPassBall(offP,defP, gameLength);
     duelResult = checkObj.check;
     if(duelResult){
+      console.log("the off succesfully passed the ball.")
       duelObj.assist = checkObj.oP;
       // for(var x in defP){}
     }
     else{
       for(var x in offP){offP[x].stats.turnOver +=1;}
-      for(var x in defP){defP[x].stats.steal +=1;}
+      for(var x in defP){
+        defP[x].stats.steal +=1;
+        console.log(x+" intercepted a pass and has a fast break opportunity.");
+      }
       duelObj.side = "def";
       duelObj.fB = true;
     }
@@ -870,13 +907,22 @@ function runVisionCheck(offP,defP,gameLength, ballPosition, assist){
           offP[x].stats.dunk +=1;
           offP[x].stats.point +=2;
           duelObj.side = "def";
-        }else{duelObj.fB = true;}
+          console.log(x+" drove past his defender, and dunks the ball for "+offP[x].stats.point+" points.");
+        }else{
+          duelObj.fB = true;
+          console.log(x+" drove past his defender, and has a fast break opportunity.");
+        }
       }
       for(var x in defP){defP[x].stats.allow +=1;}
     }
     else{
-      for(var x in offP){offP[x].stats.turnOver +=1;}
-      for(var x in defP){defP[x].stats.steal +=1;}
+      for(var y in offP){
+        offP[y].stats.turnOver +=1;
+        for(var x in defP){
+          defP[x].stats.steal +=1;
+          console.log(x+ " steals the ball when "+y+" drives past him.");
+        }
+      }
       duelObj.side = "def";
       duelObj.fB = true;
     }
@@ -894,23 +940,41 @@ function runVisionCheck(offP,defP,gameLength, ballPosition, assist){
           offP[x].stats.point +=3;
           duelObj.score=3;
           offP[x].stats.pointer3 +=1;
+          console.log(x+" scores a "+duelObj.score+" pointer, from range "+ballPosition);
         }else {
           offP[x].stats.point +=2;
           duelObj.score=2;
-          if(ballPosition >0){offP[x].stats.pointer2 +=1;}
-          else{offP[x].stats.dunk +=1;}
+          if(ballPosition >0){
+            offP[x].stats.pointer2 +=1;
+            console.log(x+" scores a "+duelObj.score+" pointer, from range "+ballPosition);
+          }
+          else{
+            offP[x].stats.dunk +=1;
+            console.log(x+" scores a "+duelObj.score+" point dunk, from range "+ballPosition);
+          }
         }
       }
       //for(x in defP){}//IF DEFENSIVE PLAYER NEEDS A STAT WHEN THE SHOT WAS GOOD.
       duelObj.side = "def";
     }else{
       for(x in offP){
+        console.log(x+" missed the shot.");
         if (ballPosition<3){offP[x].stats.miss +=1;}
         else{offP[x].stats.miss3 +=1;}
       }
-      for(x in defP){defP[x].stats.block +=1;}
-      //REBOUNDING SCRIPT RUN IN PARENT FUNCTION
-      duelObj.rebound = true;
+      duelResult=false;
+      duelResult = runBlockChance(offP,defP, gameLength);
+      if (duelResult){
+        duelObj.rebound = true;
+        console.log("rebounding.");
+      }
+      else{
+        for(x in defP){
+          console.log(x+" blocked the shot. defence takes the ball.");
+          defP[x].stats.block +=1;
+        }
+        duelObj.side = "def";
+      }
     }
   }else{console.log("!!!!WARNING, NO DECISION FOUND WITHIN THE VISION CHECK!!!")}
   duelObj.offP =offP;
@@ -1050,4 +1114,7 @@ function reboundDuel(offP, defP, gameLength){
       return duelObj;
     }
   }
+}
+function runBlockChance(offP,defP, gameLength){
+  what?()
 }
