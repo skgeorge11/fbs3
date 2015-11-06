@@ -11,6 +11,9 @@ var leagueCreateName;
 var teamCreateName;
 var userId;
 var userPassword;
+var userLeagueName;
+var userTeamName;
+var userLoginDate;
 var avoidBrokenLoop;
 var storageType="url";
  console.log("variables reset to null state");
@@ -19,31 +22,45 @@ var storageType="url";
 
 
 //CHECK FOR LOCAL STORAGE
-if(typeof(Storage) !== "undefined") {
-    storageType = "local";
-    userId = localStorage.localUserId;
-    userPassword = localStorage.localUserPassword;
-    // leagueArrayComplete = localStorage.localLeagueArray;
-    // var retrievedObject = localStorage.getItem('localUserArray');
-    // userArrayComplete = JSON.parse(retrievedObject);
-    // console.log(userArrayComplete);
-    //userArrayComplete = localStorage.localUserArray;
-    console.log("user variables taken from localStorage: "+userId);
-}else if(window.location.origin == "file://"){
-    console.log("its a local server. cookies may not be available.");
-    storageType = "file";
-}else if(navigator.cookieEnabled) {
+
+if(window.location.origin == "file://"){
+    var isChromium = window.chrome;
+    var vendorName = window.navigator.vendor;
+    var isOpera = window.navigator.userAgent.indexOf("OPR") > -1;
+    var isIEedge = window.navigator.userAgent.indexOf("Edge") > -1;
+    if(isChromium !== null && isChromium !== undefined && vendorName === "Google Inc." && isOpera == false && isIEedge == false) {
+       console.log("its a local server, and chrome browser. cookies may not be available.");
+        storageType = "file";
+    } else {
+       console.log("its a local server, but does not register as chrome browser.");
+    }
+}
+if(navigator.cookieEnabled && storageType != "file") {
     storageType ="cookie";
     userId = Cookies.get('userIdCookie');
     userPassword =Cookies.get('userPasswordCookie');
     leagueArrayComplete = Cookies.get('leagueArrayCookie');
     userArrayComplete = Cookies.get('userArrayCookie');
     console.log("cookies enabled: "+userId);
-}
+}else if(typeof(Storage) !== "undefined") {
+    storageType = "local";
+    userId = localStorage.localUserId;
+    userPassword = localStorage.localUserPassword;
+    userLeagueName = localStorage.localUserLeague;
+    userTeamName = localStorage.localUserTeam;
+    // leagueArrayComplete = localStorage.localLeagueArray;
+    // var retrievedObject = localStorage.getItem('localUserArray');
+    // userArrayComplete = JSON.parse(retrievedObject);
+    // console.log(userArrayComplete);
+    //userArrayComplete = localStorage.localUserArray;
+    console.log("user variables taken from localStorage: "+userId);
+  }
 
 
 //CALLED FUNCTIONS BELOW
 
+function goAgents(){window.location.assign("freeagent.html");}
+function goFbs3(){window.location.assign("fbs3.html");}
 
 //RETRIEVE PROMISE USER DATA FROM FIREBASE ARRAY
 function userPromiseData(user){
@@ -57,9 +74,11 @@ function userPromiseData(user){
   return userDeferred.promise();
 }
 //RETRIEVE LEAGUE ARRAY IF NOT AVAILABLE LOCALLY
-function leagueArrayCheck(){
+function leagueArrayCheck(teamName){
   if(typeof leagueArrayComplete != 'object'){
-    var leaguePromise = leagueSnapshot(userArrayComplete.child("league").val());
+    if(userArrayComplete.child("league").val()){var leaguePromise = leagueSnapshot(userArrayComplete.child("league").val());}
+    else if(userLeagueName){var leaguePromise = leagueSnapshot(userLeagueName);}
+    else{alert("ERROR 79: league array check was run without a user league name.");}
     leaguePromise.fail(function(){
       alert("leaguePromise failed: did not exist on firebase.");
     });
@@ -69,11 +88,17 @@ function leagueArrayCheck(){
       if(storageType =="local"){localStorage.localLeagueArray = snap;}
       if(storageType=="cookie"){Cookies.set('leagueArrayCookie', snap);}
       console.log("retrieved league array. Name: "+leagueArrayComplete.key());
-      teamGlanceFill(userArrayComplete.child("team").val());
+      if(teamName){teamGlanceFill(teamName);}
+      else if(userArrayComplete.child("team").val()){teamGlanceFill(userArrayComplete.child("team").val());}
+      else if(userTeamName){teamGlanceFill(userTeamName);}
+      else{alert("ERROR 95: attempted to run teamGlanceFill without team name.");}
     });
   }else{
     console.log("retrieved league array through storage. Name: "+leagueArrayComplete.key());
-    teamGlanceFill(userArrayComplete.child("team").val());
+    if(teamName){teamGlanceFill(teamName);}
+    else if(userArrayComplete.child("team").val()){teamGlanceFill(userArrayComplete.child("team").val());}
+    else if(userTeamName){teamGlanceFill(userTeamName);}
+    else{alert("ERROR 95: attempted to run teamGlanceFill without team name.");}
   }
 }
 //GRAB WHOLE LEAGUE ARRAY FOR USE THROUGHOUT GAME.
@@ -86,7 +111,7 @@ function leagueSnapshot (tempLeague){
 }
 //CHECK FOR LOCATION OF HOSTED PAGE DATA
 function teamGlanceCheck(teamName){
-  if(typeof userArrayComplete != 'object'){
+  if(typeof userArrayComplete != 'object' || !userLeagueName){
     console.log("user array not available locally, should be undefined below: "); console.log(userArrayComplete);
     var userPromise = userPromiseData(userId);
     userPromise.done(function(userSnap){
@@ -94,6 +119,8 @@ function teamGlanceCheck(teamName){
       if(storageType =="local"){
         //localStorage.setItem('localUserArray', JSON.stringify(userArrayComplete));
         //localStorage.localUserArray = userSnap;
+        localStorage.localUserLeague = userSnap.child("league").val();
+        localStorage.localUserTeam = userSnap.child("team").val();
         localStorage.localUserId = userSnap.key();
         localStorage.localUserPassword = userSnap.child("password").val();
       }
@@ -106,17 +133,22 @@ function teamGlanceCheck(teamName){
       teamGlanceFill(teamName);
     });
   }else{
+    if (!teamName){
+      if(userArrayComplete.child("team").val()){teamName = userArrayComplete.child("team").val();}
+      else if (userTeamName){teamName = userTeamName;}
+      else{alert("ERROR 135: team glance fill attempted to run without teamName being defined.");}
+    }
     teamGlanceFill(teamName);
   }
 }
 //FILL TEAM INFO PAGE
 function teamGlanceFill(teamName){
-  console.log ("teamGlanceFill initiated: " +userId);
+  console.log ("teamGlanceFill initiated: " +teamName);
   if (typeof leagueArrayComplete!= "object"){
-    console.log("league array did not exist locally: "+ leagueArrayComplete);
+    console.log("league array did not exist locally: ");
     console.log(typeof leagueArrayComplete);
-    if (userArrayComplete.child("league").val()){
-      leagueArrayCheck();
+    if (userArrayComplete.child("league").val() || userLeagueName){
+      leagueArrayCheck(teamName);
       return true;
     }else{
       $('#buttonContain').css("display","inline-block");
@@ -126,8 +158,7 @@ function teamGlanceFill(teamName){
     console.log("league array found locally. Name: "+leagueArrayComplete.key());
     $('#teamContain').css("display","inline-block");
   }
-  var teamPoint = userArrayComplete.child("team").val();
-  leagueArrayComplete.child(teamPoint).forEach(function(teamSnap) {
+  leagueArrayComplete.child(teamName).forEach(function(teamSnap) {
     var playerInfo=[];
     if(teamSnap.key() != "owner" && teamSnap.key() != "nameAssign"){
       teamSnap.forEach(function(playerSnap) {
@@ -498,7 +529,7 @@ function simGames(){
     console.log(" matchup is "+team1Name+" vs. "+team2Name);
     var playResult;
     var tempObj;
-    var gameStats={t1Name:team1Name, t2Name:team2Name, t1Score:0,t2Score:0,}
+    var gameStats={t2Name:team2Name, t1Score:0,t2Score:0,}
     var t1 = {};
     t1 = leagueArrayComplete.child(team1Name).val();
     console.log("starting t1 object below:");  console.log(t1);
@@ -533,7 +564,9 @@ function simGames(){
       tempObj = checkEndur(t2, "c", t2C);
       if (typeof tempObj.bench == "object"){t2 =moveToBench(tempObj.bench, t2);}
       t2C= tempObj.sub;
-      console.log("t1G after endurance check, object below:"); console.log(t1G);
+      for(var x in t1G){
+        console.log("t1G after endurance check: "+ t1G[x]["endurance"]);
+      }
       //ADD ENDURANCE TO BENCH
       for(var pos in t1){
         for(var player in t1[pos]){
@@ -543,7 +576,9 @@ function simGames(){
           }
         }
       }
-      console.log("t1G after endurance check (should not have changed), object below:"); console.log(t1G);
+      for(var x in t1G){
+        console.log("t1G after endurance check: "+ t1G[x]["endurance"]);
+      }
       for(var pos in t2){
         for(var player in t2[pos]){
           if(leagueArrayComplete.child(team2Name).child(player).child("endurance").val() > t2[pos][player].endurance){
@@ -568,7 +603,7 @@ function simGames(){
         else{gameStats.t1Score += playResult.score;}
       }
       else if (offencePlay == "t2"){
-        var playResult = runPlay(t2G,t2F,t2C,t1G,t1F,t1C,gameLength);
+        playResult = runPlay(t2G,t2F,t2C,t1G,t1F,t1C,gameLength);
         t1G =  playResult.dG;
         t1F =  playResult.dF;
         t1C = playResult.dC;
@@ -580,12 +615,14 @@ function simGames(){
         if (playResult.score < 0){gameStats.t1Score -= playResult.score;}// NEGATIVE REPRESENTS DEF SCORE.
         else{gameStats.t2Score += playResult.score;}
       }else{alert("!!! Warning, no team on offence!!!");}
-
+      console.log("game stats obj below: "); console.log(gameStats);
     }
-    console.log("completed game loop");
+    console.log("completed game loop. final game stats obj below saved to firebase:"); console.log(gameStats);
+    fireRef.child("leagueArray").child(leagueArrayComplete.key()).child("matchUps").child(currentDaySim).child(team1Name).set(gameStats);
   });
-  console.log("completed matchup loop");
-  //fireRef.child("leagueArray").child(leagueArrayComplete.key()).set( i dont know yet);
+  currentDaySim +=1;
+  console.log("completed matchup loop. next day to be simulated will be "+currentDaySim);
+  fireRef.child("leagueArray").child(leagueArrayComplete.key()).child("currentDay").set(currentDaySim);
 }
 // A SINGLE PLAY UNTIL TURNOVER(without fast break) OR SCORE.
 function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
@@ -612,7 +649,7 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
         defG[y].stats.steal += 1;
         console.log( y+" stole the ball.  and starts fast break.");
       }
-      fastResult = runFastBreak(defG, offG, gameLength);
+      fastResult = runFastBreak(defG, offG, gameLength,80);
       defG = fastResult.offP;//REVERSED BECAUSE OF THE INTERACTION WITH FAST BREAK FUNCTION
       offG = fastResult.defP;
       if (typeof fastResult.side == 'undefined'){
@@ -632,16 +669,18 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
     playersInQ.offP = visionResult.offP;
     playersInQ.defP = visionResult.defP;
     gameObj.score += visionResult.score;
+    console.log("score changed by "+gameObj.score);
     //CHANGE OF POSSESION, WITH OR WITHOUT FAST BREAK
     if (visionResult.side){
       if(visionResult.fB){
-          fastResult = runFastBreak(playersInQ.defP, playersInQ.offP, gameLength);
+          console.log("defense stole the ball and has a fast break.");
+          fastResult = runFastBreak(playersInQ.defP, playersInQ.offP, gameLength,80);
           gameObj.score += fastResult.score;
           playersInQ.defP = fastResult.offP;
           playersInQ.offP = fastResult.defP;
           gameObj.side = "off";
           if (!fastResult.side){
-            if(typeof playersInQ.pos == 'undefined'){console.log("!!!!WARNING, V.SIDE PLAYERSINQ.POS EMPTY!!!");}
+            if(typeof playersInQ.pos == 'undefined'){alert("!!!!WARNING, V.SIDE PLAYERSINQ.POS EMPTY!!!");}
             if (playersInQ.pos == "G"){gameObj.oG = playersInQ.offP; gameObj.dG = playersInQ.defP;}
             else{gameObj.oG = offG; gameObj.dG = defG;}
             if (playersInQ.pos == "F"){gameObj.oF = playersInQ.offP; gameObj.dF = playersInQ.defP;}
@@ -667,7 +706,8 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
     //OFFENSE FAST BREAK
     else if(!visionResult.side && visionResult.fB){
       console.log("offence fast break");
-      fastResult = runFastBreak(playersInQ.offP, playersInQ.defP, gameLength);
+      var posMod = 70 - ballPosition;
+      fastResult = runFastBreak(playersInQ.offP, playersInQ.defP, gameLength, posMod);
       gameObj.score += fastResult.score;
       gameObj.side = "def"; //DEFENSE WILL HAVE THE BALL AND BECOME OFFENSE
       playersInQ.offP = fastResult.offP;
@@ -785,7 +825,8 @@ function checkEndur(team, startPos, curPlayer){
   return tempPlayer;
 }
 //CHECK DRIBBLE PAST DEFENDER
-function dribbleCheck(hasBall,defendBall,gameLength){
+function dribbleCheck(hasBall,defendBall,gameLength, posMod){
+  if(!posMod || posMod <20){posMod = 74;}
   var noRepeat;
   //console.log("dribble check has run.");
   for(var has in hasBall){
@@ -800,7 +841,7 @@ function dribbleCheck(hasBall,defendBall,gameLength){
         if(gameLength<40){dc = (defendBall[defend].clutch)/5;}
         var ds = defendBall[defend].speed;
         var dd = defendBall[defend].defence;
-        var chance = (((hs+hb+hc)-(ds+dd+dc))*.2)+74;
+        var chance = (((hs+hb+hc)-(ds+dd+dc))*.2)+posMod;
         //console.log("chance "+chance);
         var roll = randNum(0,100);
         if (roll < chance) {
@@ -815,18 +856,22 @@ function dribbleCheck(hasBall,defendBall,gameLength){
   }
 }
 //FAST BREAK STATS. recieves player object not position.
-function runFastBreak(offP, defP, gameLength){
+function runFastBreak(offP, defP, gameLength, posMod){
   var fastObj = {score:0};
-  var duelResult = dribbleCheck(offP,defP,gameLength);
+  var duelResult = dribbleCheck(offP,defP,gameLength,posMod);
   if(duelResult){
     for(var x in offP){
       offP[x].stats.dunk +=1;
       offP[x].stats.point +=2;
+      console.log(x+" scored on a fast break.");
     }
     //for(var x in defP){defP[x].stats.allow +=1;}
     fastObj.score +=2;
   }else{
-    for(var x in offP){offP[x].stats.turnOver +=1;}
+    for(var x in offP){
+      offP[x].stats.turnOver +=1;
+      console.log(x+" lost the ball.");
+    }
     for(var x in defP){defP[x].stats.steal +=1;}
     fastObj.side = "def";
   }
@@ -854,10 +899,17 @@ function runVisionCheck(offP,defP,gameLength, ballPosition, assist){
       if (ballPosition >1){
         checkObj = runPassBall(offP,defP, gameLength);
         checkPass = checkObj.check;
+        checkPass+= randNum(-5,5);
+        console.log ("vision check for pass is: "+ checkPass);
       }
       checkDribble= dribbleCheck(offP,defP, gameLength);
+      checkDribble += randNum(-5,5);
+      console.log ("vision check for dribble is: "+ checkDribble);
       checkShot = 2*(runShootBall(offP,defP, gameLength, ballPosition));
+      console.log("vision check, check shot is: " +checkShot);
+      checkShot += randNum(-5,5);
       if(ballPosition <1){checkShot = 200;}
+      console.log("check shot after randNum and boallposition is: " +checkShot);
       var refNum =0;
       if (checkPass){
         refNum = checkPass;
@@ -963,8 +1015,8 @@ function runVisionCheck(offP,defP,gameLength, ballPosition, assist){
         else{offP[x].stats.miss3 +=1;}
       }
       duelResult=false;
-      duelResult = runBlockChance(offP,defP, gameLength);
-      if (duelResult){
+      duelResult = runBlockChance(offP,defP, gameLength, ballPosition);
+      if (duelResult.side =="off"){
         duelObj.rebound = true;
         console.log("rebounding.");
       }
@@ -999,8 +1051,8 @@ function runPassBall(hasBall,defendBall, gameLength){
         if(gameLength<40){dc = (defendBall[defend].clutch)/5;}
         var dv = defendBall[defend].vision;
         var dd = defendBall[defend].defence;
-        var chance = (((hv+hb+hc)-(dv+dd+dc))*.2)+74;
-        //console.log("chance "+chance);
+        var chance = (((hv+hb+hc)-(dv+dd+dc))*0.2)+74;
+        console.log("pass chance should be: "+chance);
         var roll = randNum(0,100);
         if (roll < chance) {
           passObj.chance = chance;
@@ -1035,6 +1087,7 @@ function runShootBall(hasBall,defendBall,gameLength,ballPosition){
         //console.log("chance "+chance);
         var roll = randNum(0,100);
         if (roll < chance) {
+          console.log("shot chance should be: "+chance);
           return chance;
           noRepeat = 1;
         }else{
@@ -1099,7 +1152,7 @@ function reboundDuel(offP, defP, gameLength){
       dR = defP[y].rebounding;
       dH = defP[y]["height"];
       adjH = (oH - dH);
-      chance = 100/((oR+adjH) + (2*(dR-adjH)));
+      chance = 100/((oR+ oC +adjH) + (2*(dR +dC -adjH)));
       chance = chance * (oR+adjH);
       roll = randNum(0,100);
       if(roll < chance){//OFFENCE GOT THE BALL BACK
@@ -1115,6 +1168,33 @@ function reboundDuel(offP, defP, gameLength){
     }
   }
 }
-function runBlockChance(offP,defP, gameLength){
-  what?()
+function runBlockChance(offP,defP, gameLength, ballPosition){
+  var chance, oS, oH, oC, dD, dH, dC, adjH, roll = 0;
+  var duelObj={};
+  duelObj.offP = offP;
+  duelObj.defP = defP;
+  for(var x in offP){
+    for(var y in defP){
+      if(gameLength < 40){
+        oC = (offP[x].clutch) * 0.3;
+        dC = (defP[y].clutch) * 0.3;
+      }
+      oS = offP[x].speed;
+      oH = offP[x]["height"];
+      dD = defP[y].defense;
+      dH = defP[y]["height"];
+      adjH = (oH - dH)*(4 - ballPosition);
+      chance = 100/((ballPosition*(oS+ oC +adjH)) + (dD +dC -adjH));
+      chance = chance * (ballPosition*(oS+ oC +adjH));
+      roll = randNum(0,100);
+      if(roll > chance){//DEFENSE BLOCKED THE SHOT.
+        console.log(y+" blocked the shot. Defense gains possesion");
+        duelObj.side = "def";
+      }else{//OFFENSE AVOIDED THE BLOCK, BUT STILL MUST REBOUND.
+        console.log("shot not blocked, but now must be rebounded.");
+        duelObj.side = "off";
+      }
+      return duelObj;
+    }
+  }
 }
