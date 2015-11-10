@@ -15,11 +15,25 @@ var userLeagueName;
 var userTeamName;
 var userLoginDate;
 var avoidBrokenLoop;
+var avoidListenLoop=0;
 var storageType="url";
  console.log("variables reset to null state");
 
 //AUTOMATIC SCRIPT RUN ON LOAD BELOW
 
+//LISTENER FOR ANY CHANGES IN LEAGUE INFO. HOPEFULLY WILL REDUCE OVERALL FIREBASE TRANSACTIONS.
+var leagueListener = fireRef.on('child_changed', function(childSnap) {
+  avoidListenLoop ++;
+  if (avoidListenLoop < 5){
+    console.log("league data changed per listener.");
+    leagueArrayComplete= 0 ;
+    leagueArrayCheck();
+  }
+});
+
+// var d = new Date();
+// fireRef.child("date").set(+d);
+// console.log(+d);
 
 //CHECK FOR LOCAL STORAGE
 
@@ -39,7 +53,7 @@ if(navigator.cookieEnabled && storageType != "file") {
     storageType ="cookie";
     userId = Cookies.get('userIdCookie');
     userPassword =Cookies.get('userPasswordCookie');
-    leagueArrayComplete = Cookies.get('leagueArrayCookie');
+    //leagueArrayComplete = Cookies.get('leagueArrayCookie');
     userArrayComplete = Cookies.get('userArrayCookie');
     console.log("cookies enabled: "+userId);
 }else if(typeof(Storage) !== "undefined") {
@@ -61,6 +75,26 @@ if(navigator.cookieEnabled && storageType != "file") {
 
 function goAgents(){window.location.assign("freeagent.html");}
 function goFbs3(){window.location.assign("fbs3.html");}
+function goLeague(){window.location.assign("leaguepage.html");}
+
+//QUICK DATE COMPARISION FUNCTION.
+function compDate(){
+  var oldDatePromise = datePromise();
+  var nextDate = new Date();
+  oldDatePromise.done(function(snap){
+    if(+nextDate > snap.val()){console.log("worked");}
+    else{console.log("didn't work. snap is "+snap.val()+ " and nextDate is "+(+nextDate));}
+  });
+}
+function datePromise(){
+  var dateDeferred = $.Deferred();
+  fireRef.child('date').once('value', function (snap) {
+       dateDeferred.resolve(snap);
+    }
+  );
+  console.log("datePromiseData ran");
+  return dateDeferred.promise();
+}
 
 //RETRIEVE PROMISE USER DATA FROM FIREBASE ARRAY
 function userPromiseData(user){
@@ -75,9 +109,10 @@ function userPromiseData(user){
 }
 //RETRIEVE LEAGUE ARRAY IF NOT AVAILABLE LOCALLY
 function leagueArrayCheck(teamName){
+  console.log("run league array check");
   if(typeof leagueArrayComplete != 'object'){
-    if(userArrayComplete.child("league").val()){var leaguePromise = leagueSnapshot(userArrayComplete.child("league").val());}
-    else if(userLeagueName){var leaguePromise = leagueSnapshot(userLeagueName);}
+    if(userArrayComplete.child("league").val()){var leaguePromise = leagueSnapshot(userArrayComplete.child("league").val()); console.log("used userArrayComplete.child");}
+    else if(userLeagueName){var leaguePromise = leagueSnapshot(userLeagueName); console.log("used userLeagueName");}
     else{alert("ERROR 79: league array check was run without a user league name.");}
     leaguePromise.fail(function(){
       alert("leaguePromise failed: did not exist on firebase.");
@@ -85,8 +120,8 @@ function leagueArrayCheck(teamName){
     leaguePromise.done(function(snap){
       leagueArrayComplete = snap;
       $('#teamContain').css("display","inline-block");
-      if(storageType =="local"){localStorage.localLeagueArray = snap;}
-      if(storageType=="cookie"){Cookies.set('leagueArrayCookie', snap);}
+      // if(storageType =="local"){localStorage.localLeagueArray = snap;}
+      // if(storageType=="cookie"){Cookies.set('leagueArrayCookie', snap);}
       console.log("retrieved league array. Name: "+leagueArrayComplete.key());
       if(teamName){teamGlanceFill(teamName);}
       else if(userArrayComplete.child("team").val()){teamGlanceFill(userArrayComplete.child("team").val());}
@@ -94,7 +129,7 @@ function leagueArrayCheck(teamName){
       else{alert("ERROR 95: attempted to run teamGlanceFill without team name.");}
     });
   }else{
-    console.log("retrieved league array through storage. Name: "+leagueArrayComplete.key());
+    console.log("retrieved league array saved locally. Name: "+leagueArrayComplete.key());
     if(teamName){teamGlanceFill(teamName);}
     else if(userArrayComplete.child("team").val()){teamGlanceFill(userArrayComplete.child("team").val());}
     else if(userTeamName){teamGlanceFill(userTeamName);}
@@ -130,7 +165,8 @@ function teamGlanceCheck(teamName){
         Cookies.set('userPasswordCookie', userSnap.child("password").val());
       }
       console.log("userArrayComplete: " + userArrayComplete.key());
-      teamGlanceFill(teamName);
+      if(!userSnap.child("team").val()){$('#buttonContain').css("display","inline-block");}
+      else{teamGlanceFill(teamName);}
     });
   }else{
     if (!teamName){
@@ -155,18 +191,20 @@ function teamGlanceFill(teamName){
       return true;
     }
   }else{
-    console.log("league array found locally. Name: "+leagueArrayComplete.key());
+    console.log("league array saved locally. Name: "+leagueArrayComplete.key());
+    checkSim();
     $('#teamContain').css("display","inline-block");
+    $('#teamGlance > tbody').html('');
+    leagueArrayComplete.child(teamName).forEach(function(teamSnap) {
+      var playerInfo=[];
+      if(teamSnap.key() != "owner" && teamSnap.key() != "nameAssign" && teamSnap.key() != "stats"){
+        teamSnap.forEach(function(playerSnap) {
+          playerInfo.push(playerSnap.val());
+        });
+        $('#teamGlance > tbody:last-child').append('<tr><td>'+teamSnap.key()+'</td><td>'+playerInfo[0]+'</td><td>'+playerInfo[12]+"in."+'</td><td>'+playerInfo[19]+"/"+playerInfo[20]+'</td><td>'+playerInfo[8]+'</td><td>'+playerInfo[7]+'</td><td>'+playerInfo[2]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td></tr>');
+      }
+    });
   }
-  leagueArrayComplete.child(teamName).forEach(function(teamSnap) {
-    var playerInfo=[];
-    if(teamSnap.key() != "owner" && teamSnap.key() != "nameAssign"){
-      teamSnap.forEach(function(playerSnap) {
-        playerInfo.push(playerSnap.val());
-      });
-    $('#teamGlance > tbody:last-child').append('<tr><td>'+teamSnap.key()+'</td><td>'+playerInfo[0]+'</td><td>'+playerInfo[1]+'</td><td>'+playerInfo[4]+'</td><td>'+playerInfo[11]+'</td><td>'+playerInfo[7]+'</td><td>'+playerInfo[2]+'</td><td>'+playerInfo[9]+'</td></tr>');
-    }
-  });
 }
 //A NEW USER CALLS THIS FUNCTION WHEN JOINING A LEAGUE
 function joinLeague(){
@@ -217,7 +255,7 @@ function nearAverageRandom(startNum, min, max){
   // console.log ("nearAverageRandom run with: "+min+" "+max+" "+startNum);
   var num = Math.floor((max-min)/20)+1;
   for (var i = 0; i < 10; i++) {
-    var smallNum = randNum(-Math.abs(num),num)+1;
+    var smallNum = randNum(-Math.abs(num),num);
     // console.log ("the small number is " +smallNum)
     startNum +=  smallNum;
     // console.log ("the nearAverageRandom numbers were: " +num+" "+smallNum+" "+startNum);
@@ -238,7 +276,8 @@ function generateName(){
 function createLeague(num){
   console.log("create league run");
   avoidBrokenLoop = "leagueCreated";''
-  fireRef.child('leagueArray').child("league"+num).set({currentDay:1,year:2016,nameAssign:"FBS All-Stars"});
+  var dTime= new Date();
+  fireRef.child('leagueArray').child("league"+num).set({currentDay:1,year:2016,nameAssign:"FBS All-Stars", lastSim: +dTime});
   for (var i = 16; i >= 0; i--) {
     // console.log("running team loop");
     createTeam("league"+num,"team"+i);
@@ -252,7 +291,7 @@ function createLeague(num){
 function createTeam(leagueName,teamName){
   // console.log("strings passed to create team: " +leagueName +teamName);
   var tempTeam;
-  fireRef.child('leagueArray').child(leagueName).child(teamName).set({owner:"compAI",nameAssign:"BlueSocks"});
+  fireRef.child('leagueArray').child(leagueName).child(teamName).set({owner:"compAI",nameAssign:"BlueSocks", stats:{game:0,gameStart:0,play:0,point:0,fBPoint:0,pointer3:0,pointer2:0,dunk:0,freeThrow:0,miss:0, miss3:0,missFt:0,assist:0,dBoard:0,oBoard:0,steal:0,block:0,drive:0,allow:0,turnOver:0,foul:0}});
   for (var t = 0; t < 8; t++) {
     // console.log("running player loop");
     addPlayer(0,leagueName,teamName);
@@ -274,7 +313,7 @@ function addPlayer(source,leagueName,teamName){
     if(!teamName){generatePlayer.push(userArrayComplete.child("team").val());}
     else{generatePlayer.push(teamName)}
     generatePlayer.push(generateName());
-    generatePlayer.push(nearAverageRandom(76,68,86));
+    generatePlayer.push(nearAverageRandom(74,68,86));
     generatePlayer.push(randNum(1,10));
   }
   // console.log("run add player" + generatePlayer[0]);
@@ -329,18 +368,19 @@ function addPlayer(source,leagueName,teamName){
   fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({stats:{game:0,gameStart:0,play:0,point:0,fBPoint:0,pointer3:0,pointer2:0,dunk:0,freeThrow:0,miss:0, miss3:0,missFt:0,assist:0,dBoard:0,oBoard:0,steal:0,block:0,drive:0,allow:0,turnOver:0,foul:0},injury:false,injuryLength:1, height : generatePlayer[3], contract: generatePlayer[4], position: generatePlayer[5], weight: generatePlayer[6], age: generatePlayer[7], speed: skillArray[0], shooting: skillArray[1], defence: skillArray[2], ballControl: skillArray[3], endurance: skillArray[4], vision: skillArray[5], clutch: skillArray[6], rebounding: skillArray[7], speedPot: skillArray[8], shootingPot: skillArray[9], defencePot: skillArray[10], ballConPot: skillArray[11], endurPot: skillArray[12], visionPot: skillArray[13], clutchPot: skillArray[14], reboundPot: skillArray[15], avgSkill: generatePlayer[8], avgPot: generatePlayer[9], seasons:1});
   // console.log("created player: "+generatePlayer[2]);
 }
-//CHECK IF SIM IS DUE
+//CHECK IF SIM IS DUE. CHANGE RATE VARIABLE TO CHANGE HOW OFTEN SIM.
 function checkSim(){
-  if(!leagueArrayComplete){console.log("league array not found locally.");}
+  if(typeof leagueArrayComplete != 'object'){alert("ERROR: 367. unable to check simulation.");}
   else{
-    var nextDay = leagueArrayComplete.child('currentDay').val();
-    nextDay++;
-    if(Date.getDate()==1){nextDay=1;}
-    fireRef.child('leagueArray').child(leagueArrayComplete.key()).child('currentDay').update(nextDay);
-    // if(nextDay == 1){
-    //   createMatchups(leagueArrayComplete.key());
-    // }
-    // else{simGames();}
+    var rate = 3600000;
+    var nextDay = new Date();
+    var oldDay = leagueArrayComplete.child('lastSim').val();
+    if(+nextDay%oldDay > rate){
+      console.log("worked, milliseconds show that it has been more than one rate since sim."+(+nextDay%oldDay));
+      var oneSim = oldDay +rate;
+      fireRef.child('leagueArray').child(leagueArrayComplete.key()).update({lastSim: oneSim});//swith to: simGames();
+    }
+    else{console.log("not yet time. milliseconds less than one rate since sim. " +oldDay+" "+(+nextDay));}
   }
 }
 //SETUP MATCHUPS WHEN CREATING LEAGUE
@@ -510,6 +550,7 @@ function moveToBench(benchObj, teamObj){
 //ADVANCE DAY AND SIM GAMES.
 function simGames(){
   console.log("sim Games run");
+  fireRef.off('child_changed', leagueListener );
   // determine day of season
   // getTeamMatchups - begin matchup loop
   // get team 1 roster - pull from team array - check injury
@@ -525,14 +566,15 @@ function simGames(){
   //BEGIN MATCH LOOP
   leagueArrayComplete.child("matchUps").child(currentDaySim).forEach(function(matchSnap) {
     var team1Name = matchSnap.key();
+    var team1Stats = {};
     var team2Name = matchSnap.val();
+    var team2Stats = {};
     console.log(" matchup is "+team1Name+" vs. "+team2Name);
     var playResult;
     var tempObj;
     var gameStats={t2Name:team2Name, t1Score:0,t2Score:0,}
     var t1 = {};
     t1 = leagueArrayComplete.child(team1Name).val();
-    console.log("starting t1 object below:");  console.log(t1);
     var t2 = {};
     t2 = leagueArrayComplete.child(team2Name).val();
     t1 = onlyHealthy(t1, team1Name);
@@ -599,7 +641,7 @@ function simGames(){
         if (playResult.side == "off") {offencePlay ="t1";}
         else{offencePlay ="t2";}
         //console.log(t1G);
-        if (playResult.score < 0){gameStats.t2Score -= playResult.score;}// NEGATIVE REPRESENTS DEF SCORE.
+        if (playResult.score < 0){gameStats.t2Score += Math.abs(playResult.score);}// NEGATIVE REPRESENTS DEF SCORE.
         else{gameStats.t1Score += playResult.score;}
       }
       else if (offencePlay == "t2"){
@@ -612,17 +654,56 @@ function simGames(){
         t2C = playResult.oC;
         if (playResult.side == "off") {offencePlay ="t2";}
         else{offencePlay ="t1";}
-        if (playResult.score < 0){gameStats.t1Score -= playResult.score;}// NEGATIVE REPRESENTS DEF SCORE.
+        if (playResult.score < 0){gameStats.t1Score += Math.abs(playResult.score);}// NEGATIVE REPRESENTS DEF SCORE.
         else{gameStats.t2Score += playResult.score;}
       }else{alert("!!! Warning, no team on offence!!!");}
       console.log("game stats obj below: "); console.log(gameStats);
     }
+    console.log("state of t1 after game"+t1);console.log(t1);
+    team1Stats = buildTeamStats (t1, team1Name);
+    console.log("team1Stats below: "); console.log(team1Stats);
+    // gameStats.stats =
     console.log("completed game loop. final game stats obj below saved to firebase:"); console.log(gameStats);
     fireRef.child("leagueArray").child(leagueArrayComplete.key()).child("matchUps").child(currentDaySim).child(team1Name).set(gameStats);
   });
   currentDaySim +=1;
   console.log("completed matchup loop. next day to be simulated will be "+currentDaySim);
-  fireRef.child("leagueArray").child(leagueArrayComplete.key()).child("currentDay").set(currentDaySim);
+  fireRef.on('child_changed', leagueListener );
+  fireRef.child("leagueArray").child(leagueArrayComplete.key()).update({currentDay:currentDaySim});
+}
+//ACCEPTS TEAM OBJECT AFTER GAME AND CREATES COMBINED STATS.
+function buildTeamStats(obj,teamName){
+  var totalStats = {};
+  var playerStats = {};
+  var nameArray=[];
+  var checkName=false;
+  for(var pos in obj){
+    //POS NOW EQUAL TO THE POSITION OF EACH PLAYER
+    for(var player in obj[pos]){
+      //PLAYER IS NOW THE PLAYER NAME FOR EACH POSITION.
+      //CHECK EACH PLAYER TO SEE IF THEIR STATS HAVE ALREADY BEEN ADDED
+      checkName = false;
+      for (var i = nameArray.length - 1; i >= 0; i--) {
+        if (player == nameArray[i]){checkName=true; console.log(player+"player already existed in array");}
+      };
+      if(!checkName){
+        console.log(player+ "player stats now being added to records.");
+        nameArray.push(player);
+        playerStats = leagueArrayComplete.child(teamName).child(player).child("stats").val();
+        console.log("player stats before the game." + playerStats.play); console.log(playerStats);
+        //NOW, ADD PLAYERS STATS TO TEAM TOTAL.
+        for(var stat in obj[pos][player].stats){
+          if(typeof totalStats[stat] == 'undefined'){totalStats[stat]=0;}
+          totalStats[stat] += obj[pos][player].stats[stat];
+          //UPDATE PLAYERS INDIV STATS IN FIREBASE
+          playerStats[stat] += obj[pos][player].stats[stat];
+        }
+        console.log("player stats after the game."+ playerStats.play); console.log(playerStats);
+        fireRef.child('leagueArray').child(leagueArrayComplete.key()).child(teamName).child(player).child("stats").set(playerStats);
+      }
+    }
+  }
+  return totalStats;
 }
 // A SINGLE PLAY UNTIL TURNOVER(without fast break) OR SCORE.
 function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
@@ -655,7 +736,7 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
       if (typeof fastResult.side == 'undefined'){
         gameObj = {oG:offG,oF:offF,oC:offC,dG:defG,dF:defF,dC:defC};
         gameObj.side = "off";
-        gameObj.score -= 2;
+        gameObj.score = -2;
         console.log("Def scored "+gameObj.score+" points.");
         return gameObj;
       }else{console.log("Offense stole the ball back and is now beginning to run thier play.");}

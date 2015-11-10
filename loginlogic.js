@@ -15,17 +15,40 @@ console.log("variables reset to null !!!");
 
 //AUTOMATIC SCRIPT RUN ON LOAD BELOW
 
-if(window.location.origin != "file://"){console.log("browser cookies enabled? "+navigator.cookieEnabled);}
 
 //CHECK FOR LOCAL STORAGE
-if(typeof(Storage) !== "undefined") {
-    // Code for localStorage/sessionStorage.
-    console.log ("Yes!  Web Storage support..");
+if(window.location.origin == "file://"){
+    var isChromium = window.chrome;
+    var vendorName = window.navigator.vendor;
+    var isOpera = window.navigator.userAgent.indexOf("OPR") > -1;
+    var isIEedge = window.navigator.userAgent.indexOf("Edge") > -1;
+    if(isChromium !== null && isChromium !== undefined && vendorName === "Google Inc." && isOpera == false && isIEedge == false) {
+       console.log("its a local server, and chrome browser. cookies may not be available.");
+        storageType = "file";
+    } else {
+       console.log("its a local server, but does not register as chrome browser.");
+    }
+}
+if(navigator.cookieEnabled && storageType != "file") {
+    storageType ="cookie";
+    userId = Cookies.get('userIdCookie');
+    userPassword =Cookies.get('userPasswordCookie');
+    leagueArrayComplete = Cookies.get('leagueArrayCookie');
+    userArrayComplete = Cookies.get('userArrayCookie');
+    console.log("cookies enabled: "+userId);
+}else if(typeof(Storage) !== "undefined") {
+    storageType = "local";
     userId = localStorage.localUserId;
     userPassword = localStorage.localUserPassword;
-} else {
-    console.log ("Sorry! No Web Storage support..");
-}
+    userLeagueName = localStorage.localUserLeague;
+    userTeamName = localStorage.localUserTeam;
+    // leagueArrayComplete = localStorage.localLeagueArray;
+    // var retrievedObject = localStorage.getItem('localUserArray');
+    // userArrayComplete = JSON.parse(retrievedObject);
+    // console.log(userArrayComplete);
+    //userArrayComplete = localStorage.localUserArray;
+    console.log("user variables taken from localStorage: "+userId);
+  }
 
 
 //CALLED FUNCTIONS BELOW
@@ -51,7 +74,8 @@ function checkPassword(origin){
       console.log("userId did not exist on firebase.");
       if (origin === "createUser"){
         console.log("created new user.")
-        fireRef.child('userArray').child(userId).set({password : userPassword});
+        var d = new Date();
+        fireRef.child('userArray').child(userId).set({password : userPassword, login: d});
         localStorage.localUserId = userId;
         localStorage.localUserPassword = userPassword;
         window.location.assign("fbs3.html");
@@ -84,7 +108,10 @@ function go() {
 }
 //RESET USER STATE ON LOCAL STORAGE
 function resetUser(){
-  localStorage.localUserId = null;
-  localStorage.localUserPassword = null;
+  localStorage.localUserId = undefined;
+  localStorage.localUserPassword = undefined;
+  localStorage.localUserLeague=undefined;
+  localStorage.localUserTeam = undefined;
   console.log("reset local storage. userID now: " + localStorage.localUserId);
+  window.location.assign("index.html");
 }
