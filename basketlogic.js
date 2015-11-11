@@ -16,6 +16,7 @@ var userTeamName;
 var userLoginDate;
 var avoidBrokenLoop;
 var avoidListenLoop=0;
+var playerLinkName="";
 var storageType="url";
  console.log("variables reset to null state");
 
@@ -24,7 +25,7 @@ var storageType="url";
 //LISTENER FOR ANY CHANGES IN LEAGUE INFO. HOPEFULLY WILL REDUCE OVERALL FIREBASE TRANSACTIONS.
 var leagueListener = fireRef.on('child_changed', function(childSnap) {
   avoidListenLoop ++;
-  if (avoidListenLoop < 5){
+  if (avoidListenLoop < 20){
     console.log("league data changed per listener.");
     leagueArrayComplete= 0 ;
     leagueArrayCheck();
@@ -197,11 +198,14 @@ function teamGlanceFill(teamName){
     $('#teamGlance > tbody').html('');
     leagueArrayComplete.child(teamName).forEach(function(teamSnap) {
       var playerInfo=[];
+      var contractWord = "drop";
+      if (teamName == "team16"){contractWord = "add";}
       if(teamSnap.key() != "owner" && teamSnap.key() != "nameAssign" && teamSnap.key() != "stats"){
         teamSnap.forEach(function(playerSnap) {
           playerInfo.push(playerSnap.val());
         });
-        $('#teamGlance > tbody:last-child').append('<tr><td>'+teamSnap.key()+'</td><td>'+playerInfo[0]+'</td><td>'+playerInfo[12]+"in."+'</td><td>'+playerInfo[19]+"/"+playerInfo[20]+'</td><td>'+playerInfo[8]+'</td><td>'+playerInfo[7]+'</td><td>'+playerInfo[2]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td></tr>');
+        playerLinkName=teamSnap.key();
+        $('#teamGlance > tbody:last-child').append('<tr><td><a href="#void" onClick="dropPlayer('+playerLinkName+');">'+teamSnap.key()+'</a></td><td>'+playerInfo[0]+'</td><td>'+playerInfo[12]+"in."+'</td><td>'+playerInfo[19]+"/"+playerInfo[20]+'</td><td>'+playerInfo[8]+'</td><td>'+playerInfo[7]+'</td><td>'+playerInfo[2]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td></tr>');
       }
     });
   }
@@ -372,7 +376,7 @@ function addPlayer(source,leagueName,teamName){
 function checkSim(){
   if(typeof leagueArrayComplete != 'object'){alert("ERROR: 367. unable to check simulation.");}
   else{
-    var rate = 3600000;
+    var rate = 86400000;
     var nextDay = new Date();
     var oldDay = leagueArrayComplete.child('lastSim').val();
     if(+nextDay%oldDay > rate){
@@ -1278,4 +1282,12 @@ function runBlockChance(offP,defP, gameLength, ballPosition){
       return duelObj;
     }
   }
+}
+//FUNCTION TO DROP PLAYER AND MOVE THEM TO THE FREE AGENT LIST
+function dropPlayer(player){
+  console.log(player);
+}
+//FUNCTION TO sign PLAYER AND MOVE THEM TO THE FREE AGENT LIST
+function signPlayer(){
+  
 }

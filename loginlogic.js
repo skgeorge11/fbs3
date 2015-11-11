@@ -33,7 +33,7 @@ if(navigator.cookieEnabled && storageType != "file") {
     storageType ="cookie";
     userId = Cookies.get('userIdCookie');
     userPassword =Cookies.get('userPasswordCookie');
-    leagueArrayComplete = Cookies.get('leagueArrayCookie');
+    //leagueArrayComplete = Cookies.get('leagueArrayCookie');
     userArrayComplete = Cookies.get('userArrayCookie');
     console.log("cookies enabled: "+userId);
 }else if(typeof(Storage) !== "undefined") {
@@ -89,6 +89,8 @@ function checkPassword(origin){
       localStorage.localUserPassword = userSnap.child("password").val();
       console.log("password matches");
       Cookies.set('userArrayCookie', userArrayComplete);
+      Cookies.set('userPasswordCookie', userPassword);
+      Cookies.set('userIdCookie', userId);
       if(window.location.origin != "file://"){console.log("cookie written: "+Cookies.get('userArrayCookie'));}
       window.location.assign("fbs3.html");
     }
@@ -112,6 +114,9 @@ function resetUser(){
   localStorage.localUserPassword = undefined;
   localStorage.localUserLeague=undefined;
   localStorage.localUserTeam = undefined;
+  Cookies.remove('userIdCookie');
+  Cookies.remove('userPasswordCookie');
+  Cookies.remove('userArrayCookie');
   console.log("reset local storage. userID now: " + localStorage.localUserId);
   window.location.assign("index.html");
 }
