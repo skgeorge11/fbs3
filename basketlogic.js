@@ -13,10 +13,11 @@ var userId;
 var userPassword;
 var userLeagueName;
 var userTeamName;
+var playerName ;
 var userLoginDate;
 var avoidBrokenLoop;
 var avoidListenLoop=0;
-var playerLinkName="";
+var playerLinkName=[];
 var storageType="url";
  console.log("variables reset to null state");
 
@@ -56,6 +57,7 @@ if(navigator.cookieEnabled && storageType != "file") {
     userPassword =Cookies.get('userPasswordCookie');
     //leagueArrayComplete = Cookies.get('leagueArrayCookie');
     userArrayComplete = Cookies.get('userArrayCookie');
+    playerName = Cookies.get('playerNameCookie');
     console.log("cookies enabled: "+userId);
 }else if(typeof(Storage) !== "undefined") {
     storageType = "local";
@@ -63,6 +65,7 @@ if(navigator.cookieEnabled && storageType != "file") {
     userPassword = localStorage.localUserPassword;
     userLeagueName = localStorage.localUserLeague;
     userTeamName = localStorage.localUserTeam;
+    playerName = localStorage.localPlayerName;
     // leagueArrayComplete = localStorage.localLeagueArray;
     // var retrievedObject = localStorage.getItem('localUserArray');
     // userArrayComplete = JSON.parse(retrievedObject);
@@ -137,7 +140,7 @@ function leagueArrayCheck(teamName){
     else{alert("ERROR 95: attempted to run teamGlanceFill without team name.");}
   }
 }
-//GRAB WHOLE LEAGUE ARRAY FOR USE THROUGHOUT GAME.
+//GRAB LEAGUE ARRAY FOR USE THROUGHOUT GAME.
 function leagueSnapshot (tempLeague){
   var leagueDeferred = $.Deferred();
   fireRef.child("leagueArray").child(tempLeague).once('value', function (snap){
@@ -196,6 +199,7 @@ function teamGlanceFill(teamName){
     checkSim();
     $('#teamContain').css("display","inline-block");
     $('#teamGlance > tbody').html('');
+    var i=0;
     leagueArrayComplete.child(teamName).forEach(function(teamSnap) {
       var playerInfo=[];
       var contractWord = "drop";
@@ -204,10 +208,26 @@ function teamGlanceFill(teamName){
         teamSnap.forEach(function(playerSnap) {
           playerInfo.push(playerSnap.val());
         });
-        playerLinkName=teamSnap.key();
-        $('#teamGlance > tbody:last-child').append('<tr><td><a href="#void" onClick="dropPlayer('+playerLinkName+');">'+teamSnap.key()+'</a></td><td>'+playerInfo[0]+'</td><td>'+playerInfo[12]+"in."+'</td><td>'+playerInfo[19]+"/"+playerInfo[20]+'</td><td>'+playerInfo[8]+'</td><td>'+playerInfo[7]+'</td><td>'+playerInfo[2]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td></tr>');
+        playerLinkName.push(teamSnap.key());
+        $('#teamGlance > tbody:last-child').append('<tr id="member'+i+'"><td>'+teamSnap.key()+'</td><td>'+playerInfo[0]+'</td><td>'+playerInfo[12]+"in."+'</td><td>'+playerInfo[19]+"/"+playerInfo[20]+'</td><td>'+playerInfo[8]+'</td><td>'+playerInfo[7]+'</td><td>'+playerInfo[2]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td></tr>');
+        i++;
       }
     });
+  }
+  for (var t = 0; t <i; t++) {
+    (function(t){
+      $('#member' + t).click(function() {
+        console.log(playerLinkName[t]);
+        if(storageType =="local"){
+          localStorage.localPlayerName = playerLinkName[t];
+        }
+        else if(storageType=="cookie"){
+          Cookies.set('playerNameCookie', playerLinkName[t]);
+        }else{playerName = playerLinkName[t];}
+        window.location.assign("playerpage.html");
+      });
+    })(t);
+    if(t>100){break;}
   }
 }
 //A NEW USER CALLS THIS FUNCTION WHEN JOINING A LEAGUE
@@ -1284,10 +1304,68 @@ function runBlockChance(offP,defP, gameLength, ballPosition){
   }
 }
 //FUNCTION TO DROP PLAYER AND MOVE THEM TO THE FREE AGENT LIST
-function dropPlayer(player){
-  console.log(player);
+function dropPlayer(){
+  if(typeof playerName == 'undefined'){window.location.assign("fbs3.html");}
+  var qVerify = confirm(playerName+" will be released to free agency?  Please note that your team will still be responsible for 77% of remaining contract.");
+  if(qVerify == true){
+    console.log("player moved to freeagent team.");
+    if(typeof leagueArrayComplete == 'object'){
+      userLeagueName = leagueArrayComplete.key();
+      if(typeof userArrayComplete == 'object'){userTeamName = (userArrayComplete.child("team").val()); console.log("used userArrayComplete.child");}
+      else if(typeof userTeamName == 'string'){console.log("used userTeamName: "+ userTeamName);}
+      else{alert("ERROR 1315: team object not available."); return true;}
+      var tempPlayer = leagueArrayComplete.child(userTeamName).child(playerName).val();
+      fireRef.off('child_changed', leagueListener );
+      fireRef.child("leagueArray").child(userLeagueName).child("team16").child(playerName).set(tempPlayer);
+      fireRef.child("leagueArray").child(userLeagueName).child(userTeamName).child(playerName).remove();
+      fireRef.on('child_changed', leagueListener );
+      window.location.assign("fbs3.html");
+      //NEEDED :STILL HAVE TO ADJUST TEAM SALARY.
+    }
+    else{alert("ERROR 1317: league object not available.");}
+  }
 }
 //FUNCTION TO sign PLAYER AND MOVE THEM TO THE FREE AGENT LIST
 function signPlayer(){
-  
+
+}
+//FUNCTION TO DESPLAY PLAYER DETAILS.
+function playerGlance(){
+  console.log(playerName);
+  if(typeof playerName == 'undefined'){window.location.assign("fbs3.html");}
+  $('#teamContain').css("display","inline-block");
+  $('#playerGlance > tbody').html('');
+  if (typeof userTeamName == 'undefined'){userTeamName = userArrayComplete.child("team").val();}
+  if(typeof leagueArrayComplete != 'object'){
+    if(typeof userArrayComplete == 'object'){var leaguePromise = leagueSnapshot(userArrayComplete.child("league").val()); console.log("used userArrayComplete.child");}
+    else if(typeof userLeagueName == 'string'){var leaguePromise = leagueSnapshot(userLeagueName); console.log("used userLeagueName: "+ userLeagueName);}
+    else{alert("ERROR 1324: league array check was run without a user league name."); window.location.assign("fbs3.html");}
+    leaguePromise.fail(function(){
+      alert("ERROR 1326: leaguePromise failed: Was not able to contact server.");
+    });
+    leaguePromise.done(function(snap){
+      console.log("league promise done.");
+      leagueArrayComplete = snap;
+      if(!avoidBrokenLoop){
+        console.log("avoidBrokenLoop is "+avoidBrokenLoop);
+        avoidBrokenLoop = true;
+        playerGlance();
+      }
+      return true;
+    });
+  }
+  if(typeof leagueArrayComplete == 'object'){
+    var statInfo=[];
+    var playerInfo=[];
+    leagueArrayComplete.child(userTeamName).child(playerName).forEach(function(playerSnap) {
+      if(playerSnap.key() != "stats"){ playerInfo.push(playerSnap.val());}
+      else{
+        playerSnap.forEach(function(statSnap) {
+          statInfo.push(statSnap.val());
+        });
+      }
+    });
+    $('#playerGlance > tbody:last-child').append('<tr><td>'+playerName+'</td><td>'+playerInfo[0]+'</td><td>'+playerInfo[12]+"in."+'</td><td>'+playerInfo[19]+"/"+playerInfo[20]+'</td><td>'+playerInfo[8]+'</td><td>'+playerInfo[7]+'</td><td>'+playerInfo[2]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td></tr>');
+    $('#statGlance > tbody:last-child').append('<tr><td>'+statInfo[0]+'</td><td>'+statInfo[1]+'</td><td>'+statInfo[2]+'</td><td>'+statInfo[3]+'</td><td>'+statInfo[4]+'</td><td>'+statInfo[5]+'</td><td>'+statInfo[6]+'</td><td>'+statInfo[7]+'</td><td>'+statInfo[8]+'</td><td>'+statInfo[9]+'</td><td>'+statInfo[10]+'</td></tr>');
+  }
 }

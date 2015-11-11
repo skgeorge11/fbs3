@@ -113,6 +113,10 @@ table th    {
     background-color: black;
     color: white;
 }
+table tr:hover{
+    background-color: yellow;
+    cursor: cell;
+}
 progress{
     margin-left:20px;
     width:80%;

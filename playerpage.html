@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Fantasy Basketball Sim 3v3</title>
+    <link href="pagelayout.css" rel="stylesheet">
+    <script src="https://cdn.firebase.com/js/client/2.2.7/firebase.js"></script>
+    <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+    <script src="js_cookie.js"></script>
+    <script src="basketlogic.js"></script>
+</head>
+    <body>
+        <div class="sideBanner" id="leftBanner"></div>
+        <div class="navContain"></div>
+        <div class="centerContain">
+            <div class ="playerContain" id="buttonContain">
+                <a href="index.html"><img class="halfImage" src="./assets/loginbutton.png"></a>
+                <a href="fbs3.html" onclick="joinLeague(); return false;">
+                    <img class="halfImage" src="./assets/newbutton.png">
+                </a>
+            </div >
+            <button onclick="goFbs3();" style="width: 100%;">Team Page</button>
+            <button onclick="goAgents();">Free Agents</button><br>
+
+            <div class = "playerContain" id="teamContain">
+                <table id="playerGlance">
+                    <thead>
+                        <tr>
+                            <th>Name</th><th>Age</th><th>Height</th><th>Shooting</th><th>Defence</th>
+                            <th>Ball Control</th><th>Rebounding</th><th>Speed</th><th>Endurance</th>
+                            <th>Vision</th><th>Clutch</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <table id="statGlance">
+                    <thead>
+                        <tr>
+                            <th>Allow</th><th>Assist</th><th>Block</th><th>D.Rebound</th><th>Drive</th>
+                            <th>Dunk</th><th>Fast Brk. Pt.</th><th>Fouls</th><th>Free Throw</th>
+                            <th>Games</th><th>Starts</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+                <br>
+                <button onclick="dropPlayer();">Release Player</button>
+                <script type="text/javascript">playerGlance();</script>
+                <br><br>
+            </div>
+        </div>
+        <div class="sideBanner" id="rightBanner"></div>
+    </body>
+</html>
