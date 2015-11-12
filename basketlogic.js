@@ -5,6 +5,7 @@ var fireRef = new Firebase("https://fbs3.firebaseio.com/");
 //GLOBAL VARIABLES
 var lastNameArray = [];
 var firstNameArray = ["Quincy","Lavoy","Giannis","Jordan","Tony","Carmelo","Stevens","Arron","Pero","Dimetrios","Chris","Trevor","Alexis","Alan","Darrel","Furkan","James","Brandon","Cole","Justin","Omar","LaMarcus","Kyle","Augustin","Alexanders","Ayer"];
+var simRate = 86400000;
 var userArrayComplete;
 var leagueArrayComplete;
 var leagueCreateName;
@@ -32,10 +33,6 @@ var leagueListener = fireRef.on('child_changed', function(childSnap) {
     leagueArrayCheck();
   }
 });
-
-// var d = new Date();
-// fireRef.child("date").set(+d);
-// console.log(+d);
 
 //CHECK FOR LOCAL STORAGE
 
@@ -396,15 +393,14 @@ function addPlayer(source,leagueName,teamName){
 function checkSim(){
   if(typeof leagueArrayComplete != 'object'){alert("ERROR: 367. unable to check simulation.");}
   else{
-    var rate = 86400000;
     var nextDay = new Date();
     var oldDay = leagueArrayComplete.child('lastSim').val();
-    if(+nextDay%oldDay > rate){
-      console.log("worked, milliseconds show that it has been more than one rate since sim."+(+nextDay%oldDay));
-      var oneSim = oldDay +rate;
-      fireRef.child('leagueArray').child(leagueArrayComplete.key()).update({lastSim: oneSim});//swith to: simGames();
+    if(+nextDay%oldDay > simRate){
+      console.log("worked. milliseconds show that it has been more than one simRate since sim."+(+nextDay%oldDay));
+      var oneSim = oldDay +simRate;
+      simGames();
     }
-    else{console.log("not yet time. milliseconds less than one rate since sim. " +oldDay+" "+(+nextDay));}
+    else{console.log("not yet time. milliseconds less than one sim rate since sim. " +oldDay+" "+(+nextDay));}
   }
 }
 //SETUP MATCHUPS WHEN CREATING LEAGUE
@@ -692,6 +688,9 @@ function simGames(){
   });
   currentDaySim +=1;
   console.log("completed matchup loop. next day to be simulated will be "+currentDaySim);
+  var oldDay = leagueArrayComplete.child('lastSim').val();
+  var oneSim = oldDay +simRate;
+  fireRef.child('leagueArray').child(leagueArrayComplete.key()).update({lastSim: oneSim});
   fireRef.on('child_changed', leagueListener );
   fireRef.child("leagueArray").child(leagueArrayComplete.key()).update({currentDay:currentDaySim});
 }
@@ -1313,7 +1312,7 @@ function dropPlayer(){
       userLeagueName = leagueArrayComplete.key();
       if(typeof userArrayComplete == 'object'){userTeamName = (userArrayComplete.child("team").val()); console.log("used userArrayComplete.child");}
       else if(typeof userTeamName == 'string'){console.log("used userTeamName: "+ userTeamName);}
-      else{alert("ERROR 1315: team object not available."); return true;}
+      else{alert("ERROR 1316: team object not available."); return true;}
       var tempPlayer = leagueArrayComplete.child(userTeamName).child(playerName).val();
       fireRef.off('child_changed', leagueListener );
       fireRef.child("leagueArray").child(userLeagueName).child("team16").child(playerName).set(tempPlayer);
@@ -1322,12 +1321,30 @@ function dropPlayer(){
       window.location.assign("fbs3.html");
       //NEEDED :STILL HAVE TO ADJUST TEAM SALARY.
     }
-    else{alert("ERROR 1317: league object not available.");}
+    else{alert("ERROR 1325: league object not available.");}
   }
 }
 //FUNCTION TO sign PLAYER AND MOVE THEM TO THE FREE AGENT LIST
 function signPlayer(){
-
+  console.log("player signed to "+userTeamName);
+  if(typeof playerName == 'undefined'){window.location.assign("freeagent.html");}
+  var qVerify = confirm(playerName+" will be signed to your team?  Please note that your team will be responsible for the cost of this players contract.");
+  if(qVerify == true){
+    console.log("player moved to your team.");
+    if(typeof leagueArrayComplete == 'object'){
+      userLeagueName = leagueArrayComplete.key();
+      if(storageType =="local"){ userTeamName = localStorage.localUserTeam; console.log("user team from local");}
+      if(typeof userTeamName != 'string'){userTeamName = (userArrayComplete.child("team").val()); console.log("used userArrayComplete.child");}
+      var tempPlayer = leagueArrayComplete.child("team16").child(playerName).val();
+      fireRef.off('child_changed', leagueListener );
+      fireRef.child("leagueArray").child(userLeagueName).child(userTeamName).child(playerName).set(tempPlayer);
+      fireRef.child("leagueArray").child(userLeagueName).child("team16").child(playerName).remove();
+      fireRef.on('child_changed', leagueListener );
+      window.location.assign("fbs3.html");
+      //NEEDED :STILL HAVE TO ADJUST TEAM SALARY.
+    }
+    else{alert("ERROR 1347: league object not available.");}
+  }
 }
 //FUNCTION TO DESPLAY PLAYER DETAILS.
 function playerGlance(){
@@ -1337,8 +1354,8 @@ function playerGlance(){
   $('#playerGlance > tbody').html('');
   if (typeof userTeamName == 'undefined'){userTeamName = userArrayComplete.child("team").val();}
   if(typeof leagueArrayComplete != 'object'){
-    if(typeof userArrayComplete == 'object'){var leaguePromise = leagueSnapshot(userArrayComplete.child("league").val()); console.log("used userArrayComplete.child");}
-    else if(typeof userLeagueName == 'string'){var leaguePromise = leagueSnapshot(userLeagueName); console.log("used userLeagueName: "+ userLeagueName);}
+    if(typeof userLeagueName == 'string'){var leaguePromise = leagueSnapshot(userLeagueName); console.log("used userLeagueName: "+ userLeagueName);}
+    else if(typeof userArrayComplete == 'object'){var leaguePromise = leagueSnapshot(userArrayComplete.child("league").val()); console.log("used userArrayComplete.child");}
     else{alert("ERROR 1324: league array check was run without a user league name."); window.location.assign("fbs3.html");}
     leaguePromise.fail(function(){
       alert("ERROR 1326: leaguePromise failed: Was not able to contact server.");
@@ -1357,6 +1374,18 @@ function playerGlance(){
   if(typeof leagueArrayComplete == 'object'){
     var statInfo=[];
     var playerInfo=[];
+    var playerPresent;
+    leagueArrayComplete.child(userTeamName).forEach(function(nameSnap){
+      if (playerName == nameSnap.key()) {
+        playerPresent=true; console.log("player found");
+        $('#addDropButton').text("Release Player").click(function(){dropPlayer()});
+      }
+    });
+    if(!playerPresent){
+      userTeamName="team16";
+      console.log("player not present on user team. Changed to free agents.");
+      $('#addDropButton').text("Sign Player").click(function(){signPlayer()});
+    }
     leagueArrayComplete.child(userTeamName).child(playerName).forEach(function(playerSnap) {
       if(playerSnap.key() != "stats"){ playerInfo.push(playerSnap.val());}
       else{
