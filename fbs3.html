@@ -40,25 +40,33 @@
                     </thead>
                     <tbody></tbody>
                 </table>
+                <br>
+                <p>Guard</p>
+                <select id="guard1Select" name="g1" onchange="depthChange(this.value, this.name);"> </select>
+                <select id="guard2Select" name="g2" onchange="depthChange(this.value, this.name);">  </select>
+                <select id="guard3Select" name="g3" onchange="depthChange(this.value, this.name);"></select>
+                <p>Forward</p>
+                <select id="forward1Select" name="f1" onchange="depthChange(this.value, this.name);">
+                    <option disabled selected> -- What are your orders capatin? -- </option>
+                </select>
+                <select id="forward2Select" name="f2" onchange="depthChange(this.value, this.name);">
+                    <option disabled selected> -- What are your orders capatin? -- </option>
+                </select>
+                <select id="forward3Select" name="f3" onchange="depthChange(this.value, this.name);">
+                    <option disabled selected> -- What are your orders capatin? -- </option>
+                </select>
+                <p>Center</p>
+                <select id="center1Select" name="c1" onchange="depthChange(this.value, this.name);">
+                    <option disabled selected> -- What are your orders capatin? -- </option>
+                </select>
+                <select id="center2Select" name="c2" onchange="depthChange(this.value, this.name);">
+                    <option disabled selected> -- What are your orders capatin? -- </option>
+                </select>
+                <select id="center3Select" name="c3" onchange="depthChange(this.value, this.name);">
+                    <option disabled selected> -- What are your orders capatin? -- </option>
+                </select>
                 <script type="text/javascript">teamGlanceCheck();</script>
                 <br><br>
-                <!-- <h1>Add new player</h1>
-                <form name="addPlayerForm" onsubmit = "addPlayer('form');return false;" accept-charset="utf-8">
-                    <ul>
-                        <li><label for="leagueName">League</label>
-                        <input type="text" id="leagueName" value="alphaLeague" required></li>
-                        <li><label for="playerTeamInput">Team</label>
-                        <input type="text" id="playerTeamInput" value="Giraffes" required></li>
-                        <li><label for="playerNameInput">Name</label>
-                        <input type="text" id="playerNameInput" placeholder="Type your password here..." required></li>
-                        <li><label for="playerHeightInput">Height</label>
-                        <input type="number" min="70" max="86" id="playerHeightInput" placeholder="Type your user name here..." required></li>
-                        <li><label for="playerContractInput">Contract</label>
-                        <input type="number" id="playerContractInput" placeholder="Type your password here..." required></li>
-                        <li>
-                        <input type="submit" value="Create"></li>
-                    </ul>
-                </form> -->
                 <button onclick="simGames();">sim Games</button>
             </div>
         </div>

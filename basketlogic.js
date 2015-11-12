@@ -194,6 +194,7 @@ function teamGlanceFill(teamName){
   }else{
     console.log("league array saved locally. Name: "+leagueArrayComplete.key());
     checkSim();
+    depthFill();
     $('#teamContain').css("display","inline-block");
     $('#teamGlance > tbody').html('');
     var i=0;
@@ -225,6 +226,7 @@ function teamGlanceFill(teamName){
       });
     })(t);
     if(t>100){break;}
+
   }
 }
 //A NEW USER CALLS THIS FUNCTION WHEN JOINING A LEAGUE
@@ -1397,4 +1399,64 @@ function playerGlance(){
     $('#playerGlance > tbody:last-child').append('<tr><td>'+playerName+'</td><td>'+playerInfo[0]+'</td><td>'+playerInfo[12]+"in."+'</td><td>'+playerInfo[19]+"/"+playerInfo[20]+'</td><td>'+playerInfo[8]+'</td><td>'+playerInfo[7]+'</td><td>'+playerInfo[2]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td></tr>');
     $('#statGlance > tbody:last-child').append('<tr><td>'+statInfo[0]+'</td><td>'+statInfo[1]+'</td><td>'+statInfo[2]+'</td><td>'+statInfo[3]+'</td><td>'+statInfo[4]+'</td><td>'+statInfo[5]+'</td><td>'+statInfo[6]+'</td><td>'+statInfo[7]+'</td><td>'+statInfo[8]+'</td><td>'+statInfo[9]+'</td><td>'+statInfo[10]+'</td></tr>');
   }
+}
+//FILL DEPTH CHART PULL DOWNS.
+function depthFill(){
+  if (typeof userTeamName == 'undefined'){userTeamName = userArrayComplete.child("team").val(); console.log("set user team name.");}
+  if (typeof userTeamName == 'undefined'){alert("ERROR 1407: no user team name found.");}
+  if(typeof leagueArrayComplete != 'object'){
+    if(typeof userLeagueName == 'string'){var leaguePromise = leagueSnapshot(userLeagueName); console.log("used userLeagueName: "+ userLeagueName);}
+    else if(typeof userArrayComplete == 'object'){var leaguePromise = leagueSnapshot(userArrayComplete.child("league").val()); console.log("used userArrayComplete.child");}
+    else{alert("ERROR 1411: depth fill was run without a user league name."); window.location.assign("index.html");}
+    leaguePromise.fail(function(){
+      alert("ERROR 1413: leaguePromise failed: Was not able to contact server.");
+    });
+    leaguePromise.done(function(snap){
+      console.log("league promise done.");
+      leagueArrayComplete = snap;
+      if(!avoidBrokenLoop){
+        console.log("avoidBrokenLoop is "+avoidBrokenLoop);
+        avoidBrokenLoop = true;
+        depthFill();
+      }
+    });
+  }
+  if(typeof leagueArrayComplete == 'object'){
+    var i = 1;
+    avoidBrokenLoop=0;
+    var optionText = "player name";
+    for (var y = 1; y<4; y++) {
+      $("#guard"+y+"Select").empty().append('<option disabled selected> -- Who will be your '+y+' guard? -- </option>');
+      $("#forward"+y+"Select").empty().append('<option disabled selected> -- Who will be your '+y+' forward? -- </option>');
+      $("#center"+y+"Select").empty().append('<option disabled selected> -- Who will be your '+y+' center? -- </option>');
+      leagueArrayComplete.child(userTeamName).forEach(function(playerSnap){
+        if(typeof playerSnap.child("position").val()== 'string'){
+          if(playerSnap.child("position").val() == "g1"){
+            console.log("player was assigned to position "+("g"+y));
+            $("#guard1Select").prepend('<option value=" '+playerSnap.key()+' ">'+playerSnap.key()+'</option>');
+          }
+          else if (playerSnap.child("position").val() == "f1") {
+            $("#forward"+y+"Select").prepend('<option value=" '+playerSnap.key()+' ">'+playerSnap.key()+'</option>');
+          }
+          else if (playerSnap.child("position").val() == "c"+y) {
+            $("#center"+y+"Select").prepend('<option value=" '+playerSnap.key()+' ">'+playerSnap.key()+'</option>');
+          }
+          else {
+            $("#guard"+y+"Select").append('<option value=" '+playerSnap.key()+' ">'+playerSnap.key()+'</option>');
+            $("#forward"+y+"Select").append('<option value=" '+playerSnap.key()+' ">'+playerSnap.key()+'</option>');
+            $("#center"+y+"Select").append('<option value=" '+playerSnap.key()+' ">'+playerSnap.key()+'</option>');
+          }
+        }//else{console.log(playerSnap.key() +" not a player ");}
+      });
+    }
+    $('select').prop('selectedIndex', 0);
+  }
+}
+//DEPTH CHART PULL DOWNS CHANGED.
+function depthChange(selectPlayer, location){
+  fireRef.off('child_changed', leagueListener );
+  console.log("value retrieved is: "+ selectPlayer+" and "+location);
+  leagueArrayComplete.child(userTeamName).child(selectPlayer).child("position").val() = location;
+  depthFill();
+  fireRef.on('child_changed', leagueListener );
 }
