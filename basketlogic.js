@@ -694,7 +694,9 @@ function simGames(){
   var oneSim = oldDay +simRate;
   fireRef.child('leagueArray').child(leagueArrayComplete.key()).update({lastSim: oneSim});
   fireRef.on('child_changed', leagueListener );
-  fireRef.child("leagueArray").child(leagueArrayComplete.key()).update({currentDay:currentDaySim});
+  setTimeout(function(){
+    fireRef.child("leagueArray").child(leagueArrayComplete.key()).update({currentDay:currentDaySim});
+  }, 1000);
 }
 //ACCEPTS TEAM OBJECT AFTER GAME AND CREATES COMBINED STATS.
 function buildTeamStats(obj,teamName){
@@ -1422,31 +1424,34 @@ function depthFill(){
     });
   }
   if(typeof leagueArrayComplete == 'object'){
-    var i = 1;
+    var guardStart, forwardStart, centerStart;
     avoidBrokenLoop=0;
-    var optionText = "player name";
     for (var y = 1; y<4; y++) {
-      $("#guard"+y+"Select").empty().append('<option disabled selected> -- Who will be your '+y+' guard? -- </option>');
-      $("#forward"+y+"Select").empty().append('<option disabled selected> -- Who will be your '+y+' forward? -- </option>');
-      $("#center"+y+"Select").empty().append('<option disabled selected> -- Who will be your '+y+' center? -- </option>');
+      $("#guard"+y+"Select").empty().append('<option disabled selected value=false> -- Who will be your '+y+' guard? -- </option>');
+      $("#forward"+y+"Select").empty().append('<option disabled selected value=false> -- Who will be your '+y+' forward? -- </option>');
+      $("#center"+y+"Select").empty().append('<option disabled selected value=false> -- Who will be your '+y+' center? -- </option>');
       leagueArrayComplete.child(userTeamName).forEach(function(playerSnap){
         if(typeof playerSnap.child("position").val()== 'string'){
-          if(playerSnap.child("position").val() == "g1"){
-            console.log("player was assigned to position "+("g"+y));
-            $("#guard1Select").prepend('<option value=" '+playerSnap.key()+' ">'+playerSnap.key()+'</option>');
-          }
-          else if (playerSnap.child("position").val() == "f1") {
-            $("#forward"+y+"Select").prepend('<option value=" '+playerSnap.key()+' ">'+playerSnap.key()+'</option>');
-          }
-          else if (playerSnap.child("position").val() == "c"+y) {
-            $("#center"+y+"Select").prepend('<option value=" '+playerSnap.key()+' ">'+playerSnap.key()+'</option>');
-          }
-          else {
-            $("#guard"+y+"Select").append('<option value=" '+playerSnap.key()+' ">'+playerSnap.key()+'</option>');
-            $("#forward"+y+"Select").append('<option value=" '+playerSnap.key()+' ">'+playerSnap.key()+'</option>');
-            $("#center"+y+"Select").append('<option value=" '+playerSnap.key()+' ">'+playerSnap.key()+'</option>');
-          }
-        }//else{console.log(playerSnap.key() +" not a player ");}
+          if(playerSnap.key()!=guardStart && playerSnap.key()!=forwardStart && playerSnap.key()!=centerStart){
+              if(playerSnap.child("position").val() == "g"+y){
+                $("#guard"+y+"Select").prepend('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');
+                if(y==1){guardStart=playerSnap.key();}
+              }
+              else if (playerSnap.child("position").val() == "f"+y) {
+                $("#forward"+y+"Select").prepend('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');
+                if(y==1){forwardStart=playerSnap.key();}
+              }
+              else if (playerSnap.child("position").val() == "c"+y) {
+                $("#center"+y+"Select").prepend('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');
+                if(y==1){centerStart=playerSnap.key();}
+              }
+              else {
+                $("#guard"+y+"Select").append('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');
+                $("#forward"+y+"Select").append('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');
+                $("#center"+y+"Select").append('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');
+              }
+            }
+         }//else{console.log(playerSnap.key() +" not a player ");}
       });
     }
     $('select').prop('selectedIndex', 0);
@@ -1454,9 +1459,16 @@ function depthFill(){
 }
 //DEPTH CHART PULL DOWNS CHANGED.
 function depthChange(selectPlayer, location){
+  var oldVal;
   fireRef.off('child_changed', leagueListener );
   console.log("value retrieved is: "+ selectPlayer+" and "+location);
-  leagueArrayComplete.child(userTeamName).child(selectPlayer).child("position").val() = location;
-  depthFill();
+  oldVal = $('select[name=' + location + '] :nth-child(1)').val();
+  if(oldVal!="false"){
+    console.log("old val found to be a player: "+oldVal);
+    fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(userTeamName).child(oldVal).child("position").set("bench");
+  }
   fireRef.on('child_changed', leagueListener );
+  setTimeout(function(){
+    fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(userTeamName).child(selectPlayer).child("position").set(location);
+  }, 1000);
 }
