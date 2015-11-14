@@ -30,7 +30,11 @@ var leagueListener = fireRef.on('child_changed', function(childSnap) {
   if (avoidListenLoop < 20){
     console.log("league data changed per listener.");
     leagueArrayComplete= 0 ;
-    leagueArrayCheck();
+    var path = window.location.pathname;
+    var page = path.split("/").pop();
+    console.log( page );
+    if (page == 'freeagent.html'){teamName = "team16";}
+    leagueArrayCheck(teamName);
   }
 });
 
@@ -121,8 +125,6 @@ function leagueArrayCheck(teamName){
     leaguePromise.done(function(snap){
       leagueArrayComplete = snap;
       $('#teamContain').css("display","inline-block");
-      // if(storageType =="local"){localStorage.localLeagueArray = snap;}
-      // if(storageType=="cookie"){Cookies.set('leagueArrayCookie', snap);}
       console.log("retrieved league array. Name: "+leagueArrayComplete.key());
       if(teamName){teamGlanceFill(teamName);}
       else if(userArrayComplete.child("team").val()){teamGlanceFill(userArrayComplete.child("team").val());}
@@ -196,13 +198,17 @@ function teamGlanceFill(teamName){
     checkSim();
     teamYearCheck(teamName);
     depthFill();
+    var path = window.location.pathname;
+    var page = path.split("/").pop();
+    console.log( page );
+    if (page == 'freeagent.html'){teamName = "team16";}
     $('#teamContain').css("display","inline-block");
     $('#teamGlance > tbody').html('');
     var i=0;
     leagueArrayComplete.child(teamName).forEach(function(teamSnap) {
       var playerInfo=[];
       var playerAge = 0;
-      if(teamSnap.key() != "owner" && teamSnap.key() != "nameAssign" && teamSnap.key() != "stats"){
+      if(teamSnap.key() != "owner" && teamSnap.key() != "nameAssign" && teamSnap.key() != "tYear" && teamSnap.key() != "stats"){
         teamSnap.forEach(function(playerSnap) {
           if(typeof playerSnap.val() !="object"){playerInfo.push(playerSnap.val());}
           if(playerSnap.key() == "draft"){
@@ -235,7 +241,31 @@ function teamGlanceFill(teamName){
 }
 //CHECK THE TEAM YEAR WITH THE LEAGUE YEAR TO SEE IF THE TEAM IS CURRENT.
 function teamYearCheck(teamName){
-  //needed:
+  console.log("comparing the tYear of "+teamName);
+  var counter = 0;
+  var leagueYear = leagueArrayComplete.child("year").val();
+  var teamYear = leagueArrayComplete.child(teamName).child("tYear").val();
+  console.log("The league year is: "+leagueYear+", and the team year is: "+teamYear);
+  while(leagueYear>teamYear){
+    counter++;
+    if(counter>2){alert("ERRor 245: broken loop while updating team.");break;}
+    fireRef.off('child_changed', leagueListener );
+    leagueArrayComplete.child(teamName).forEach(function(playerSnap){
+      if(typeof playerSnap.val() == 'object' && playerSnap.key() != "stats"){
+        //NEEDED: CHANGE ALL PLAYERS AGING STATS AND UPDATE THEM IN FIREBASE.
+        console.log("aging player "+playerSnap.key()+ " by one year");
+        if(playerSnap.child("shootingPot").val() > playerSnap.child("shooting").val()){
+          console.log(playerSnap.key() + " shooting has been increased.");
+        }
+      }else{console.log("player "+playerSnap.key()+ " found to not be a player object");}
+    });
+    teamYear ++;
+    console.log("added one to the team year: "+teamYear);
+    fireRef.on('child_changed', leagueListener );
+    setTimeout(function(){
+        fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(teamName).update({tYear:teamYear});
+    }, 1000);
+  }
 }
 //A NEW USER CALLS THIS FUNCTION WHEN JOINING A LEAGUE
 function joinLeague(){
@@ -1341,6 +1371,7 @@ function dropPlayer(){
       var tempPlayer = leagueArrayComplete.child(userTeamName).child(playerName).val();
       fireRef.off('child_changed', leagueListener );
       fireRef.child("leagueArray").child(userLeagueName).child("team16").child(playerName).set(tempPlayer);
+      console.log(userTeamName);
       fireRef.child("leagueArray").child(userLeagueName).child(userTeamName).child(playerName).remove();
       fireRef.on('child_changed', leagueListener );
       window.location.assign("fbs3.html");
@@ -1363,6 +1394,7 @@ function signPlayer(){
       var tempPlayer = leagueArrayComplete.child("team16").child(playerName).val();
       fireRef.off('child_changed', leagueListener );
       fireRef.child("leagueArray").child(userLeagueName).child(userTeamName).child(playerName).set(tempPlayer);
+      fireRef.child("leagueArray").child(userLeagueName).child(userTeamName).child(playerName).update({position:"bench"});
       fireRef.child("leagueArray").child(userLeagueName).child("team16").child(playerName).remove();
       fireRef.on('child_changed', leagueListener );
       window.location.assign("fbs3.html");
@@ -1413,7 +1445,7 @@ function playerGlance(){
       $('#addDropButton').text("Sign Player").click(function(){signPlayer()});
     }
     leagueArrayComplete.child(userTeamName).child(playerName).forEach(function(playerSnap) {
-      if(typeof playerSnap.key() != "object"){
+      if(typeof playerSnap.val() != "object"){
         if(playerSnap.key() == "draft"){
           var tempNum = leagueArrayComplete.child("year").val()-playerSnap.val();
           playerAge=playerInfo[0]+tempNum;
