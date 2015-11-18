@@ -24,22 +24,7 @@ var storageType="url";
 
 //AUTOMATIC SCRIPT RUN ON LOAD BELOW
 
-//LISTENER FOR ANY CHANGES IN LEAGUE INFO. HOPEFULLY WILL REDUCE OVERALL FIREBASE TRANSACTIONS.
-var leagueListener = fireRef.on('child_changed', function(childSnap) {
-  avoidListenLoop ++;
-  if (avoidListenLoop < 20){
-    console.log("league data changed per listener.");
-    leagueArrayComplete= 0 ;
-    var path = window.location.pathname;
-    var page = path.split("/").pop();
-    console.log( page );
-    if (page == 'freeagent.html'){teamName = "team16";}
-    leagueArrayCheck(teamName);
-  }
-});
-
-//CHECK FOR LOCAL STORAGE
-
+//CHECK FOR LOCAL STORAGE
 if(window.location.origin == "file://"){
     var isChromium = window.chrome;
     var vendorName = window.navigator.vendor;
@@ -56,7 +41,6 @@ if(navigator.cookieEnabled && storageType != "file") {
     storageType ="cookie";
     userId = Cookies.get('userIdCookie');
     userPassword =Cookies.get('userPasswordCookie');
-    //leagueArrayComplete = Cookies.get('leagueArrayCookie');
     userArrayComplete = Cookies.get('userArrayCookie');
     playerName = Cookies.get('playerNameCookie');
     console.log("cookies enabled: "+userId);
@@ -67,14 +51,35 @@ if(navigator.cookieEnabled && storageType != "file") {
     userLeagueName = localStorage.localUserLeague;
     userTeamName = localStorage.localUserTeam;
     playerName = localStorage.localPlayerName;
-    // leagueArrayComplete = localStorage.localLeagueArray;
-    // var retrievedObject = localStorage.getItem('localUserArray');
-    // userArrayComplete = JSON.parse(retrievedObject);
-    // console.log(userArrayComplete);
-    //userArrayComplete = localStorage.localUserArray;
     console.log("user variables taken from localStorage: "+userId);
   }
 
+//LISTENER FOR ANY CHANGES IN LEAGUE INFO. HOPEFULLY WILL REDUCE OVERALL FIREBASE TRANSACTIONS.
+var leagueListener = fireRef.on('child_changed', function(childSnap) {
+  avoidListenLoop ++;
+  if (avoidListenLoop == 1){
+    console.log("league data changed per listener.");
+    setTimeout(function(){
+      leagueArrayComplete= 0;
+      var path = window.location.pathname;
+      var page = path.split("/").pop();
+      console.log( page );
+      if (page == 'freeagent.html'){teamName = "team16";}
+      if (typeof teamName == 'undefined'){
+        if(storageType =="local"){
+          teamName = localStorage.localUserTeam;
+        }
+        else if(storageType=="cookie"){
+          var tempCookie = Cookies.get('userArrayCookie');
+          teamName = tempCookie.team;
+        }
+        else{window.location.assign("fbs3.html"); return true;}
+      }
+      avoidListenLoop = 0;
+      leagueArrayCheck(teamName);
+    }, 5000);
+  }
+});
 
 //CALLED FUNCTIONS BELOW
 
@@ -217,7 +222,7 @@ function teamGlanceFill(teamName){
           }
         });
         playerLinkName.push(teamSnap.key());
-        $('#teamGlance > tbody:last-child').append('<tr id="member'+i+'"><td>'+teamSnap.key()+'</td><td>'+playerAge+'</td><td>'+playerInfo[12]+"in."+'</td><td>'+playerInfo[19]+"/"+playerInfo[20]+'</td><td>'+playerInfo[8]+'</td><td>'+playerInfo[7]+'</td><td>'+playerInfo[2]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td></tr>');
+        $('#teamGlance > tbody:last-child').append('<tr id="member'+i+'"><td>'+teamSnap.key()+'</td><td>'+playerAge+'</td><td>'+playerInfo[13]+"in."+'</td><td>'+playerInfo[2]+"/"+playerInfo[1]+'</td><td>'+playerInfo[19]+"/"+playerInfo[20]+'</td><td>'+playerInfo[8]+"/"+playerInfo[9]+'</td><td>'+playerInfo[4]+"/"+playerInfo[3]+'</td><td>'+playerInfo[18]+"/"+playerInfo[17]+'</td><td>'+playerInfo[21]+"/"+playerInfo[22]+'</td><td>'+playerInfo[12]+"/"+playerInfo[11]+'</td><td>'+playerInfo[23]+"/"+playerInfo[24]+'</td><td>'+playerInfo[5]+"/"+playerInfo[6]+'</td></tr>');
         i++;
       }
     });
@@ -307,23 +312,24 @@ function wholeLeagueDeferred(){
 }
 //RANDOM NUMBER
 function randNum(min,max){
-  adjMax = max-min;
+  adjMax = max-min+1;
   var tempNum = Math.floor((Math.random() * adjMax) + min);
+  //console.log("randNum adjMax is:"+adjMax+". And the random number is: "+tempNum);
   return tempNum;
 }
 //FIND A NUMBER NEAR THE APROXIMATE AVERAGE
 function nearAverageRandom(startNum, min, max){
-  // console.log ("nearAverageRandom run with: "+min+" "+max+" "+startNum);
-  var num = Math.floor((max-min)/20)+1;
+  //console.log ("nearAverageRandom run with: "+min+" "+max+" "+startNum);
+  var num = Math.floor(((max-min)/10)+1);
   for (var i = 0; i < 10; i++) {
-    var smallNum = randNum(-Math.abs(num),num);
-    // console.log ("the small number is " +smallNum)
+    var negNum = -1*Math.abs(num);
+    var smallNum = randNum(negNum,num);
     startNum +=  smallNum;
     // console.log ("the nearAverageRandom numbers were: " +num+" "+smallNum+" "+startNum);
     if (startNum >max){startNum = max;}
     if (startNum <min){startNum = min;}
   }
-  // console.log ("the nearAverageRandom numbers were: " +num+" "+smallNum+" "+startNum);
+  //console.log ("the nearAverageRandom numbers were: " +num+" "+smallNum+" "+startNum);
   return startNum;
 }
 //GENERATE PLAYER NAMES FROM GLOBAL NAME ARRAY
@@ -361,6 +367,7 @@ function createTeam(leagueName,teamName){
 }
 //CREATE PLAYER
 function addPlayer(source,leagueName,teamName,year){
+  console.log("run addPlayer: "+source+", "+leagueName+", "+teamName+", "+year);
   var generatePlayer = [];
   //FILL GENPLAYER WITH [LEAGUE,TEAM,NAME,HEIGHT,CONTRACT,SPEED,SHOOTING,DEFENCE,POSTITION]
   if (source == "form"){
@@ -375,7 +382,7 @@ function addPlayer(source,leagueName,teamName,year){
     if(!teamName){generatePlayer.push(userArrayComplete.child("team").val());}
     else{generatePlayer.push(teamName)}
     generatePlayer.push(generateName());
-    generatePlayer.push(nearAverageRandom(74,68,86));
+    generatePlayer.push(nearAverageRandom(77,68,86));
     generatePlayer.push(randNum(1,10));
   }
   // console.log("run add player" + generatePlayer[0]);
@@ -384,48 +391,58 @@ function addPlayer(source,leagueName,teamName,year){
   generatePlayer.push(21+randNum(-4,5));
   var skillId = randNum(40,60);
   var potentialSkill = randNum(60,90);
-  var tempAverage = skillId;
+  var runningAverage = 0;
+  console.log ("potential skill average should be: "+ potentialSkill);
   var skillAverage = skillId;
   var goalAverage = skillId;
-  var tempNum = 0;
   var switchPush;
   var skillArray=[];
   var totalAttribute = 8;
   for (var y = 0; y < 2; y++) {
+    var tempNum = 0;
     for (var i = 0; i < totalAttribute; i++) {
       var remainAttribute = totalAttribute - i;
       skillAverage = Math.floor(((goalAverage * totalAttribute ) - tempNum) / remainAttribute);
+      console.log("goal: " +goalAverage+", skill average: "+skillAverage);
       var tempMin = 20;
-      var tempMax = 100;
+      var tempMax = 94;
       var tempSkill = nearAverageRandom(skillAverage, tempMin ,tempMax);
+      console.log("random new skill: "+tempSkill);
       skillArray.push(tempSkill);
       tempNum = 0;
       var tempIndex = 0;
-      $.each(skillArray, function( index, value ) {
-        tempNum += value;
-        tempIndex = index + 1;
-      });
-      tempAverage = Math.floor(tempNum / (tempIndex));
+      if(y==0){
+        $.each(skillArray, function( index, value ) {
+          tempNum += value;
+          tempIndex = index + 1;
+          runningAverage = tempNum/tempIndex;
+        });
+      }else{
+        var loopCrash = 0;
+        for(z=totalAttribute; z< (totalAttribute*2); z++){
+          loopCrash++; if(loopCrash >20){break;}
+          if(skillArray[z]){
+            tempNum += skillArray[z];
+            runningAverage=tempNum/(i+1);
+          }
+        }
+      }
+      if(y==1){
+        var adjNum = i+totalAttribute;
+        if (skillArray[i]>skillArray[adjNum]) {
+          console.log("skill pot below current ability found in loop: "+skillArray[i]+", "+skillArray[adjNum]);
+          skillArray[adjNum] = skillArray[i] + 5;
+          if(skillArray[adjNum]>99){skillArray[adjNum] = 99;}
+        }
+      }
     };
-    if(!switchPush){
-      generatePlayer.push(skillAverage);
-      tempAverage = potentialSkill;
-      skillAverage = potentialSkill;
-      goalAverage = potentialSkill;
-      switchPush=1;
-    }else{
-      generatePlayer.push(skillAverage);
-    }
+    console.log("average after skills loop "+y+": " +Math.floor(runningAverage));
+    generatePlayer.push(Math.floor(runningAverage));
+    skillAverage = potentialSkill;
+    goalAverage = potentialSkill;
   };
-  for (var z = 0; z < totalAttribute; z++) {
-    var adjNum = z+totalAttribute;
-    if (skillArray[z]>skillArray[adjNum]) {
-      // console.log("skill pot below current ability");
-      skillArray[adjNum] = skillArray[z] + 5;
-    };
-  };
-
   fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({stats:{game:0,gameStart:0,play:0,point:0,fBPoint:0,pointer3:0,pointer2:0,dunk:0,freeThrow:0,miss:0, miss3:0,missFt:0,assist:0,dBoard:0,oBoard:0,steal:0,block:0,drive:0,allow:0,turnOver:0,foul:0},injury:false,injuryLength:1, height : generatePlayer[3], contract: generatePlayer[4], position: generatePlayer[5], weight: generatePlayer[6], age: generatePlayer[7], speed: skillArray[0], shooting: skillArray[1], defence: skillArray[2], ballControl: skillArray[3], endurance: skillArray[4], vision: skillArray[5], clutch: skillArray[6], rebounding: skillArray[7], speedPot: skillArray[8], shootingPot: skillArray[9], defencePot: skillArray[10], ballConPot: skillArray[11], endurPot: skillArray[12], visionPot: skillArray[13], clutchPot: skillArray[14], reboundPot: skillArray[15], avgSkill: generatePlayer[8], avgPot: generatePlayer[9], draft: year});
+  return generatePlayer[2];
 }
 //CHECK IF SIM IS DUE. CHANGE RATE VARIABLE TO CHANGE HOW OFTEN SIM.
 function checkSim(){
@@ -441,10 +458,14 @@ function checkSim(){
         console.log("found to be a new month. Created new season matchups and aged everything by 1 year. ");
         fireRef.off('child_changed', leagueListener );
         var nextYear = leagueArrayComplete.child("year").val() +1;
-        fireRef.child('leagueArray').child(leagueArrayComplete.key()).update({currentDay : 1, year: nextYear, lastSim: +nextDay});
-        fireRef.on('child_changed', leagueListener );
         var tempMatchArray = createMatchups();
         fireRef.child('leagueArray').child(leagueArrayComplete.key()).child("matchUps").set(tempMatchArray);
+        for (var i = 16; i > 0; i--) {
+          var tempPlayer = addPlayer(0, leagueArrayComplete.key(), "team16", nextYear);//source,leagueName,teamName,year
+          console.log("added " +tempPlayer +" to free Agrents");
+        };
+        fireRef.on('child_changed', leagueListener );
+        fireRef.child('leagueArray').child(leagueArrayComplete.key()).update({currentDay : 1, year: nextYear, lastSim: +nextDay});
       }else if(nextDay.getDate() >3){
         console.log("not the first day of the month, and time for season sim.: "+ nextDay.getDate());
         simGames();
@@ -461,7 +482,7 @@ function createMatchups(leagueName){
     matchUpObject[z]={team1:"team2"};
   };
   var tempTeam2;
-  for (var x = 0; x <2; x++) {//  NEEDED: CHANGE X<2 TO 16 WHEN FULLY TESTED.
+  for (var x = 0; x <2; x++) {//  NEEDED: CHANGE X<2 TO  x<16 WHEN FULLY TESTED.
     for (var y = 1; y <83; y++) {
       var dayRemain = (y%15)+1;
       tempTeam2=(x+dayRemain)%16;
@@ -491,7 +512,7 @@ function onlyHealthy(obj, teamId){
   }
   return obj;
 }
-//SEARCH EACH OBJECT FOR EACH PLAYERS POSITION AND REPLACE IF NEEDED.
+//SEARCH EACH OBJECT FOR EACH PLAYERS POSITION AND REPLACE IF   REQUIRED.
 function findPosition(obj){
   //console.log("find position run");
   var benchObj = {};
@@ -1458,7 +1479,7 @@ function playerGlance(){
         });
       }
     });
-    $('#playerGlance > tbody:last-child').append('<tr><td>'+playerName+'</td><td>'+playerAge+'</td><td>'+playerInfo[12]+"in."+'</td><td>'+playerInfo[19]+"/"+playerInfo[20]+'</td><td>'+playerInfo[8]+'</td><td>'+playerInfo[7]+'</td><td>'+playerInfo[2]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td><td>'+playerInfo[9]+'</td></tr>');
+    $('#playerGlance > tbody:last-child').append('<tr><td>'+playerName+'</td><td>'+playerAge+'</td><td>'+playerInfo[13]+"in."+'</td><td>'+playerInfo[2]+"/"+playerInfo[1]+'</td><td>'+playerInfo[19]+"/"+playerInfo[20]+'</td><td>'+playerInfo[8]+"/"+playerInfo[9]+'</td><td>'+playerInfo[4]+"/"+playerInfo[3]+'</td><td>'+playerInfo[18]+"/"+playerInfo[17]+'</td><td>'+playerInfo[21]+"/"+playerInfo[22]+'</td><td>'+playerInfo[12]+"/"+playerInfo[11]+'</td><td>'+playerInfo[23]+"/"+playerInfo[24]+'</td><td>'+playerInfo[5]+"/"+playerInfo[6]+'</td></tr>');
     $('#statGlance > tbody:last-child').append('<tr><td>'+statInfo[0]+'</td><td>'+statInfo[1]+'</td><td>'+statInfo[2]+'</td><td>'+statInfo[3]+'</td><td>'+statInfo[4]+'</td><td>'+statInfo[5]+'</td><td>'+statInfo[6]+'</td><td>'+statInfo[7]+'</td><td>'+statInfo[8]+'</td><td>'+statInfo[9]+'</td><td>'+statInfo[10]+'</td></tr>');
   }
   if(typeof userArrayComplete =='object'){userTeamName=userArrayComplete.child("team").val();}
