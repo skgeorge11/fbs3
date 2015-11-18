@@ -53,6 +53,11 @@ if(navigator.cookieEnabled && storageType != "file") {
 
 //CALLED FUNCTIONS BELOW
 
+function timeStamp(){
+  var tempTime = new Date();
+  fireRef.child("leagueArray").child("league2").child("lastSim").set(+tempTime);
+  console.log("lastSim set to current time: " +(+tempTime));
+}
 
 //RETRIEVE PROMISE USER DATA FROM FIREBASE ARRAY
 function userPromiseData(user){
