@@ -795,12 +795,13 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
   //console.log(offG);
   var visionResult={score:0};
   var fastBreak=false;
+  var fastMod = 40;
   var ballPosition = 4;
   var gameObj={score:0};
   var fastResult ={};
   var playersInQ = {offP:offG, defP:defG,assist:false, pos:"G"};
   //HAVE GUARD DRIBLE ACROSS HALF COURT.
-  var dribble = dribbleCheck(offG, defG,gameLength,85);
+  var dribble = dribbleCheck(offG, defG,gameLength,80);
   if (dribble) {
     for(var y in offG){
       offG[y].stats.drive += 1;
@@ -815,16 +816,24 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
         defG[y].stats.steal += 1;
         console.log( y+" stole the ball.  and starts fast break.");
       }
-      fastResult = runFastBreak(defG, offG, gameLength,80);
+      ballPosition -= 1;
+      fastResult = runFastBreak(defG, offG, gameLength,40);
       defG = fastResult.offP;//REVERSED BECAUSE OF THE INTERACTION WITH FAST BREAK FUNCTION
       offG = fastResult.defP;
-      if (typeof fastResult.side == 'undefined'){
+      if (typeof fastResult.side == 'undefined' && !fastResult.stay){
         gameObj = {oG:offG,oF:offF,oC:offC,dG:defG,dF:defF,dC:defC};
         gameObj.side = "off";
         gameObj.score = -2;
         console.log("Def scored "+gameObj.score+" points.");
         return gameObj;
-      }else{console.log("Offense stole the ball back and is now beginning to run thier play.");}
+      }
+      else if(fastResult.stay){
+        gameObj = {oG:offG,oF:offF,oC:offC,dG:defG,dF:defF,dC:defC};
+        gameObj.side = "def";
+        gameObj.score = 0;
+        return gameObj;
+      }
+      else{console.log("Offense stole the ball back and is now beginning to run thier play.");}
   }else{alert("ERROR 826: warning. dribble function returned niether true nor false.");}
   ballPosition = 3;
   //GUARD HAS MADE TO HALFCOURT, NOW BEGIN OFFENSE LOOP
@@ -834,17 +843,33 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
     // GUARD HAS EITHER LOST THE BALL, DRIBBLED, PASSED OR SHOT
     playersInQ.offP = visionResult.offP;
     playersInQ.defP = visionResult.defP;
-    gameObj.score += visionResult.score;
+    if(visionResult.score){
+      console.log("visionResult score ="+visionResult.score);
+      gameObj.score += visionResult.score;
+      for(var x in playersInQ.assist){
+        playersInQ.assist[x].stats.assist +=1;
+        console.log ("assist stat given to "+x+". He now has "+playersInQ.assist[x].stats.assist);
+      }
+    }
     console.log("score changed by "+gameObj.score+". Side:"+visionResult.side+". Fb:"+visionResult.fB+". Rebound:"+visionResult.rebound+". assist:"+visionResult.assist);
     //CHANGE OF POSSESION, WITH OR WITHOUT FAST BREAK
     if (visionResult.side){
       if(visionResult.fB){
           console.log("defense stole the ball and has a fast break.");
-          fastResult = runFastBreak(playersInQ.defP, playersInQ.offP, gameLength,80);
-          gameObj.score = -1*fastResult.score;
+          fastResult = runFastBreak(playersInQ.defP, playersInQ.offP, gameLength,40);
+          if(fastResult.score){
+            console.log("fastResult score ="+fastResult.score);
+            gameObj.score = -1*fastResult.score;
+            for(var x in playersInQ.assist){
+              playersInQ.assist[x].stats.assist +=1;
+              console.log ("assist stat given to "+x+". He now has "+playersInQ.assist[x].stats.assist);
+            }
+          }
           playersInQ.defP = fastResult.offP;
           playersInQ.offP = fastResult.defP;
-          gameObj.side = "off";
+          if(fastResult.stay){
+            gameObj.side = "def";
+          }else{gameObj.side = "off";}
           if (!fastResult.side){
             if(typeof playersInQ.pos == 'undefined'){alert("ERROR 849: V.SIDE PLAYERSINQ.POS EMPTY");}
             if (playersInQ.pos == "G"){gameObj.oG = playersInQ.offP; gameObj.dG = playersInQ.defP;}
@@ -873,10 +898,20 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
     //OFFENSE FAST BREAK
     else if(!visionResult.side && visionResult.fB){
       console.log("offence fast break");
-      var posMod = 70 - ballPosition;
-      fastResult = runFastBreak(playersInQ.offP, playersInQ.defP, gameLength, posMod);
-      gameObj.score += fastResult.score;
-      gameObj.side = "def"; //DEFENSE WILL HAVE THE BALL AND BECOME OFFENSE
+      ballPosition -= 1;
+      fastMod = 60-(10*ballPosition);
+      fastResult = runFastBreak(playersInQ.offP, playersInQ.defP, gameLength, fastMod);
+      if(fastResult.score){
+        console.log("fastResult score ="+fastResult.score);
+        gameObj.score += fastResult.score;
+        for(var x in playersInQ.assist){
+          playersInQ.assist[x].stats.assist +=1;
+          console.log ("assist stat given to "+x+". He now has "+playersInQ.assist[x].stats.assist);
+        }
+      }
+      if(!fastResult.stay){
+        gameObj.side = "def"; //DEFENSE WILL HAVE THE BALL AND BECOME OFFENSE
+      }
       playersInQ.offP = fastResult.offP;
       playersInQ.defP = fastResult.defP;
       if(typeof playersInQ.pos == 'undefined'){console.log("!!!!WARNING, V.SIDE PLAYERSINQ.POS EMPTY!!!");}
@@ -903,23 +938,37 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
       gameObj.dG = fastResult.dG;
       gameObj.dF= fastResult.dF;
       gameObj.dC= fastResult.dC;
-      if(gameObj.side =="def") {
+      if (fastResult.score){gameObj.score = fastResult.score;}
+      if(gameObj.side =="def" && !fastResult.score) {
         console.log(" defence rebounded. gameObj being returned: "); console.log(gameObj);
         return gameObj;
-        //break;
+      }
+      else if(gameObj.side =="def" && fastResult.score) {
+        console.log(" defence gets the ball after offense scores: "); console.log(gameObj);
+        return gameObj;
+      }else{
+        console.log("offense gets back the ball after rebound... outside range 0 correct? "+ballPosition);
       }
     }
     //SUCCESFUL PASS, POSSIBLE ASSIST.
     else if(typeof visionResult.assist != 'undefined'){
       console.log("assist opportunity");
       fastResult = visionResult.assist;
-      ballPosition = randNum(1,2); //TEMPORARILY BORROWING BALLpOSITION
-      if (ballPosition ==1){playersInQ={offP:offC,defP:defC, assist:fastResult.oP, pos:"C"};}
-      else if (ballPosition == 2){playersInQ={offP:offF,defP:defF, assist:fastResult.oP, pos:"F"};}
-      else{alert("!!!WARNING, AFTER PASS NO PLAYER RECIEVED!!!");}
-      ballPosition = randNum(0,2); //OK, ACTUAL BALL POSITION AFTER PASS IS FOUND.
+      var randPos = randNum(1,3);
+      if (randPos ==1 && playersInQ.pos != "C"){playersInQ={offP:offC,defP:defC, assist:fastResult , pos:"C"};}
+      else if (randPos == 1 && playersInQ.pos != "F"){playersInQ={offP:offF,defP:defF, assist:fastResult , pos:"F"};}
+      else if (randPos == 2 && playersInQ.pos != "F"){playersInQ={offP:offF,defP:defF, assist:fastResult , pos:"F"};}
+      else if (randPos == 2 && playersInQ.pos != "G"){playersInQ={offP:offG,defP:defG, assist:fastResult , pos:"G"};}
+      else if (randPos == 3 && playersInQ.pos != "G"){playersInQ={offP:offG,defP:defG, assist:fastResult , pos:"G"};}
+      else if (randPos == 3 && playersInQ.pos != "C"){playersInQ={offP:offC,defP:defC, assist:fastResult , pos:"C"};}
+      else{alert("ERROR 919: PASS NO ASSIST PLAYER RECIEVED");}
+      ballPosition -= 1;
+      if (ballPosition<0 || ballPosition > 3){
+        ballPosition = 0;
+        console.log("had to adj ball position to 0. It was out of range.");
+      }
       for(var x in playersInQ.assist){
-        console.log ("assist opprortunity for "+playersInQ["assist"][x]+". Passed to "+playersInQ.pos);
+        console.log ("assist opprortunity for "+x+". Passed to the "+playersInQ.pos);
       }
     }
     //ERROR WARNING
@@ -947,7 +996,7 @@ function checkEndur(team, startPos, curPlayer){
       curPlayerName = player;
       console.log(player+" is already assigned to the position "+startPos+". His endurance is "+curPlayer[player]["endurance"]);
       if(curPlayer[player].endurance > 1){
-        curPlayer[player].endurance -= 3;
+        curPlayer[player].endurance -= 20;//NEEDED: REPLACE WITH THE NUMBER 3 WHEN IN ALPHA.
         curPlayer[player].stats.play += 1;
         tempPlayer= curPlayer;
         done = true;
@@ -1012,7 +1061,7 @@ function dribbleCheck(hasBall,defendBall,gameLength, posMod){
         var chance = (((hs+hb+hc)-(ds+dd+dc))*.2)+posMod;
         //console.log("chance "+chance);
         var roll = randNum(0,100);
-        console.log(has+" has a chance of "+chance+", compared to a base of "+posMod+". And the roll was: "+roll);
+        console.log(has+" has a dribble chance of "+chance+", compared to a base of "+posMod+". And the roll was: "+roll);
         if (roll < chance) {
           return chance;
           noRepeat = 1;
@@ -1027,6 +1076,7 @@ function dribbleCheck(hasBall,defendBall,gameLength, posMod){
 //FAST BREAK STATS. recieves player object not position.
 function runFastBreak(offP, defP, gameLength, posMod){
   var fastObj = {score:0};
+  var randBreak = randNum(0,100);
   var duelResult = dribbleCheck(offP,defP,gameLength,posMod);
   if(duelResult){
     for(var x in offP){
@@ -1036,7 +1086,12 @@ function runFastBreak(offP, defP, gameLength, posMod){
     }
     //for(var x in defP){defP[x].stats.allow +=1;}
     fastObj.score +=2;
-  }else{
+  }
+  else if(randBreak < 50){
+    console.log(" ball carrier didn't make it to the hoop and resets offense.");
+    fastObj.stay = "off";
+  }
+  else{
     for(var x in offP){
       offP[x].stats.turnOver +=1;
       console.log(x+" lost the ball.");
@@ -1101,8 +1156,7 @@ function runVisionCheck(offP,defP,gameLength, ballPosition, assist){
       var refNum = randNum(1,3);
       if (refNum == 1 && ballPosition > 1){decision = "pass";}
       else if (refNum == 2 && ballPosition > 0){decision = "dribble";}
-      else if (refNum == 3){ decision = "shot";}
-      else{alert("ERROR 1111: vision check failed, but no decision made by rand num.");}
+      else { decision = "shot";}
       console.log("vision check failed, random decision is "+ decision);
     }
   }
@@ -1362,6 +1416,7 @@ function runBlockChance(offP,defP, gameLength, ballPosition){
       chance = 100/((ballPosition*(oS+ oC +adjH)) + (dD +dC -adjH));
       chance = chance * (ballPosition*(oS+ oC +adjH));
       roll = randNum(0,100);
+      console.log("The inverse chance that the ball is blocked is: "+chance+". And the roll is:"+roll);
       if(roll > chance){//DEFENSE BLOCKED THE SHOT.
         console.log(y+" blocked the shot. Defense gains possesion");
         duelObj.side = "def";
