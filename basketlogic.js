@@ -658,6 +658,7 @@ function simGames(){//NEEDED: ADD INJURY CHANCE DURING GAME.
       var team2Stats = {};
       console.log(" matchup is "+team1Name+" vs. "+team2Name);
       var playResult;
+      var startNameArray =[];
       var tempObj;
       var gameStats={t2Name:team2Name, t1Score:0,t2Score:0,}
       var t1 = {};
@@ -670,7 +671,12 @@ function simGames(){//NEEDED: ADD INJURY CHANCE DURING GAME.
       t1 = findPosition(t1);
       t2 = findPosition(t2);
       console.log("positions of t1 object below:");  console.log(t1);
-      var t1G,t1F,t1C,t2G,t2F,t2C;
+      var t1G = t1.g1;
+      var t1F=t1.f1;
+      var t1C=t1.c1;
+      var t2G = t2.g1;
+      var t2F=t2.f2;
+      var t2C=t2.c2;
       var offencePlay ="t1";
       //BEGIN GAME LOOP
       for(var gameLength = 5; gameLength > 0; gameLength-- ){
@@ -678,12 +684,13 @@ function simGames(){//NEEDED: ADD INJURY CHANCE DURING GAME.
         for(var x in t2C){
           console.log("t2C before endurance check: "+ t2C[x]["endurance"]);
         }
-        t1G= checkEndur(t1, "g", t1G);
-        t1F = checkEndur(t1, "f", t1F);
-        t1C = checkEndur(t1, "c", t1C);
-        t2G = checkEndur(t2, "g", t2G);
-        t2F = checkEndur(t2, "f", t2F);
-        t2C = checkEndur(t2, "c", t2C);
+        startNameArray[0]= checkEndur(t1, "g", t1G, startNameArray);//NEEDED: DOUBLE CHECK IF T1G IS BEING CHANGED.
+        startNameArray[1] = checkEndur(t1, "f", t1F, startNameArray);
+        startNameArray[2] = checkEndur(t1, "c", t1C, startNameArray);
+        startNameArray[3] = checkEndur(t2, "g", t2G, startNameArray);
+        startNameArray[4] = checkEndur(t2, "f", t2F, startNameArray);
+        startNameArray[5] = checkEndur(t2, "c", t2C, startNameArray);
+        console.log("startNameArray: "+ startNameArray);
         for(var x in t1G){
           console.log("t1G after endurance check: "+ t1G[x]["endurance"]);
         }
@@ -968,7 +975,7 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
         console.log("had to adj ball position to 0. It was out of range.");
       }
       for(var x in playersInQ.assist){
-        console.log ("assist opprortunity for "+x+". Passed to the "+playersInQ.pos);
+        console.log ("assist opprortunity for "+x+". Passed to the "+playersInQ.pos+" at position "+ballPosition);
       }
     }
     //ERROR WARNING
@@ -987,10 +994,9 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
 }
 
 //CHECK ENDURANCE OF EACH STARTER
-function checkEndur(team, startPos, curPlayer){
+function checkEndur(team, startPos, curPlayer,startNameArray){
   var done = false;
   var curPlayerName;
-  var tempPlayer={sub:0};
   if(typeof curPlayer != 'undefined'){
     for(var player in curPlayer){
       curPlayerName = player;
@@ -998,11 +1004,9 @@ function checkEndur(team, startPos, curPlayer){
       if(curPlayer[player].endurance > 1){
         curPlayer[player].endurance -= 20;//NEEDED: REPLACE WITH THE NUMBER 3 WHEN IN ALPHA.
         curPlayer[player].stats.play += 1;
-        tempPlayer= curPlayer;
         done = true;
-        return tempPlayer;
+        return player;
       }else{
-        //tempPlayer.bench[player] = curPlayer[player];
         console.log(player+" has been subbed to the bench to rest");
       }
     }
@@ -1010,13 +1014,16 @@ function checkEndur(team, startPos, curPlayer){
   if (!done){
     for(i=1; i<4; i++){
       for(var target in team[startPos + i ]){
+        for (var z = startNameArray.length - 1; z >= 0; z--) {
+          if(target ==startNameArray[z]){curPlayerName = target;}
+        }
         if (team[startPos + i ][target].endurance > 19 && curPlayerName != target && !done){
           team[startPos + i ][target].endurance -= 3;
           team[startPos + i ][target].stats.play += 1;
-          tempPlayer = team[startPos + i ];
-          console.log(target+" has been assigned to "+startPos+". His endurance is "+tempPlayer[target]["endurance"]);
+          curPlayer = team[startPos + i ];
+          console.log(target+" has been assigned to "+startPos+". His endurance is "+curPlayer[target]["endurance"]);
           done = true;
-          return tempPlayer;
+          return target;
         }
       }
     }
@@ -1025,21 +1032,24 @@ function checkEndur(team, startPos, curPlayer){
     for(var position in team){
       if(position == "b1" || position == "b2" || position == "b3"){
         for(var target in team[position]){
-          if (team[possition][target].endurance > 19 && target != curPlayerName && !done){
-            team[possition][target].endurance -= 3;
-            team[possition][target].stats.play += 1;
+          for (var z = startNameArray.length - 1; z >= 0; z--) {
+            if(target ==startNameArray[z]){curPlayerName = target;}
+          }
+          if (team[position][target].endurance > 19 && target != curPlayerName && !done){
+            team[position][target].endurance -= 3;
+            team[position][target].stats.play += 1;
             console.log(target+" is called off the bench, to the position "+startPos);
-            tempPlayer = team[possition];
+            curPlayer = team[position];
             done = true;
+            return target;
           }
         }
       }
     }
   }
   if (!done){
-    alert("ERROR 995: no position player started after endurance check");
+    console.log("Last player started becasue no position player started after endurance check");
   }
-  return tempPlayer;
 }
 //CHECK DRIBBLE PAST DEFENDER
 function dribbleCheck(hasBall,defendBall,gameLength, posMod){
@@ -1059,6 +1069,7 @@ function dribbleCheck(hasBall,defendBall,gameLength, posMod){
         var ds = defendBall[defend].speed;
         var dd = defendBall[defend].defence;
         var chance = (((hs+hb+hc)-(ds+dd+dc))*.2)+posMod;
+        chance = roundToTwo(chance);
         //console.log("chance "+chance);
         var roll = randNum(0,100);
         console.log(has+" has a dribble chance of "+chance+", compared to a base of "+posMod+". And the roll was: "+roll);
@@ -1281,7 +1292,7 @@ function runPassBall(hasBall,defendBall, gameLength){
         if(gameLength<40){dc = (defendBall[defend].clutch)/5;}
         var dv = defendBall[defend].vision;
         var dd = defendBall[defend].defence;
-        var chance = (((hv+hb+hc)-(dv+dd+dc))*0.2)+74;
+        var chance = (((hv+hb+hc)-(dv+dd+dc))*0.2)+74; //NEEDED: MAKE SURE THIS USES DIFFERENT SKILLS THAN DRIBBLE. ALSO, INCLUDE BALL POSITION.
         console.log("pass chance should be: "+chance);
         var roll = randNum(0,100);
         if (roll < chance) {
@@ -1312,7 +1323,9 @@ function runShootBall(hasBall,defendBall,gameLength,ballPosition){
         var dh = defendBall[defend]["height"];
         var dd = defendBall[defend].defence;
         var adjH = (2/ballPosition)*(hh-dh);
+        adjH = roundToTwo(adjH);
         var chance = (((hs+hc)-(dd+dc))*.3) + (60 - bp) + adjH;
+        chance = roundToTwo(chance);
         //var roll = randNum(0,100);
         console.log("Shot at ball position: "+ ballPosition +". Base shooting chance: "+ (60 - bp) +". Height adjust: "+adjH+". Total chance: "+chance);
         // if (roll < chance) {
@@ -1413,7 +1426,7 @@ function runBlockChance(offP,defP, gameLength, ballPosition){
       dD = defP[y].defense;
       dH = defP[y]["height"];
       adjH = (oH - dH)*(4 - ballPosition);
-      chance = 100/((ballPosition*(oS+ oC +adjH)) + (dD +dC -adjH));
+      chance = 100/((ballPosition*(oS+ oC +adjH)) + (dD +dC -adjH));//NEEDED: FIX CHANCE. CURRENTLY NAN.
       chance = chance * (ballPosition*(oS+ oC +adjH));
       roll = randNum(0,100);
       console.log("The inverse chance that the ball is blocked is: "+chance+". And the roll is:"+roll);
@@ -1596,4 +1609,7 @@ function depthChange(selectPlayer, location){
     fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(userTeamName).child(oldVal).child("position").set("bench");
   }
   fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(userTeamName).child(selectPlayer).child("position").set(location);
+}
+function roundToTwo(num) {
+    return +(Math.round(num + "e+2")  + "e-2");
 }
