@@ -213,7 +213,7 @@ function teamGlanceFill(teamName){
     leagueArrayComplete.child(teamName).forEach(function(teamSnap) {
       var playerInfo=[];
       var playerAge = 0;
-      if(teamSnap.key() != "owner" && teamSnap.key() != "nameAssign" && teamSnap.key() != "tYear" && teamSnap.key() !=    "stats"){
+      if(teamSnap.key() != "owner" && teamSnap.key() != "nameAssign" && teamSnap.key() != "tYear" && teamSnap.key() !=    "stats" && teamSnap.key()!= "statTotal"){
         teamSnap.forEach(function(playerSnap) {
           if(typeof playerSnap.val() !="object"){playerInfo.push(playerSnap.val());}
           if(playerSnap.key() == "draft"){
@@ -222,7 +222,7 @@ function teamGlanceFill(teamName){
           }
         });
         playerLinkName.push(teamSnap.key());
-        $('#teamGlance > tbody:last-child').append('<tr id="member'+i+'"><td>'+teamSnap.key()+'</td><td>'+playerAge+'</td><td>'+playerInfo[13]+"in."+'</td><td>'+playerInfo[2]+"/"+playerInfo[1]+'</td><td>'+playerInfo[19]+"/"+playerInfo[20]+'</td><td>'+playerInfo[8]+"/"+playerInfo[9]+'</td><td>'+playerInfo[4]+"/"+playerInfo[3]+'</td><td>'+playerInfo[18]+"/"+playerInfo[17]+'</td><td>'+playerInfo[21]+"/"+playerInfo[22]+'</td><td>'+playerInfo[12]+"/"+playerInfo[11]+'</td><td>'+playerInfo[23]+"/"+playerInfo[24]+'</td><td>'+playerInfo[5]+"/"+playerInfo[6]+'</td><td>'+playerInfo[14]+'</td></tr>');
+        $('#teamGlance > tbody:last-child').append('<tr id="member'+i+'"><td>'+teamSnap.key()+'</td><td>'+playerAge+'</td><td>'+playerInfo[13]+"in."+'</td><td>'+playerInfo[2]+"/"+playerInfo[1]+'</td><td>'+playerInfo[21]+"/"+playerInfo[22]+'</td><td>'+playerInfo[8]+"/"+playerInfo[9]+'</td><td>'+playerInfo[4]+"/"+playerInfo[3]+'</td><td>'+playerInfo[20]+"/"+playerInfo[19]+'</td><td>'+playerInfo[23]+"/"+playerInfo[24]+'</td><td>'+playerInfo[12]+"/"+playerInfo[11]+'</td><td>'+playerInfo[25]+"/"+playerInfo[26]+'</td><td>'+playerInfo[5]+"/"+playerInfo[6]+'</td><td>'+playerInfo[14]+'</td></tr>');
         i++;
       }
     });
@@ -354,7 +354,7 @@ function createLeague(num){
 function createTeam(leagueName,teamName){
   // console.log("strings passed to create team: " +leagueName +teamName);
   var tempTeam;
-  fireRef.child('leagueArray').child(leagueName).child(teamName).set({owner:"compAI",nameAssign:"BlueSocks", tYear: 2016, stats:{game:0,gameStart:0,play:0,point:0,fBPoint:0,pointer3:0,pointer2:0,dunk:0,freeThrow:0,miss:0, miss3:0,missFt:0,assist:0,dBoard:0,oBoard:0,steal:0,block:0,drive:0,allow:0,turnOver:0,foul:0}});
+  fireRef.child('leagueArray').child(leagueName).child(teamName).set({owner:"compAI",nameAssign:"BlueSocks", tYear: 2016, stats:{game:0,gameStart:0,play:0,point:0,fBPoint:0,pointer3:0,pointer2:0,dunk:0,freeThrow:0,miss:0, miss3:0,missFt:0,assist:0,dBoard:0,oBoard:0,steal:0,block:0,drive:0,allow:0,turnOver:0,foul:0}, statTotal:{game:0,gameStart:0,play:0,point:0,fBPoint:0,pointer3:0,pointer2:0,dunk:0,freeThrow:0,miss:0, miss3:0,missFt:0,assist:0,dBoard:0,oBoard:0,steal:0,block:0,drive:0,allow:0,turnOver:0,foul:0}});
   for (var t = 0; t < 8; t++) {
     // console.log("running player loop");
 
@@ -437,7 +437,7 @@ function addPlayer(source,leagueName,teamName,year){
     skillAverage = potentialSkill;
     goalAverage = potentialSkill;
   };
-  fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({stats:{game:0,gameStart:0,play:0,point:0,fBPoint:0,pointer3:0,pointer2:0,dunk:0,freeThrow:0,miss:0, miss3:0,missFt:0,assist:0,dBoard:0,oBoard:0,steal:0,block:0,drive:0,allow:0,turnOver:0,foul:0},injury:false,injuryLength:1, height : generatePlayer[3], contract: generatePlayer[4], position: generatePlayer[5], weight: generatePlayer[6], age: generatePlayer[7], speed: skillArray[0], shooting: skillArray[1], defence: skillArray[2], ballControl: skillArray[3], endurance: skillArray[4], vision: skillArray[5], clutch: skillArray[6], rebounding: skillArray[7], speedPot: skillArray[8], shootingPot: skillArray[9], defencePot: skillArray[10], ballConPot: skillArray[11], endurPot: skillArray[12], visionPot: skillArray[13], clutchPot: skillArray[14], reboundPot: skillArray[15], avgSkill: generatePlayer[8], avgPot: generatePlayer[9], draft: year});
+  fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({stats:{game:0,gameStart:0,play:0,point:0,fBPoint:0,pointer3:0,pointer2:0,dunk:0,freeThrow:0,miss:0, miss3:0,missFt:0,assist:0,dBoard:0,oBoard:0,steal:0,block:0,drive:0,allow:0,turnOver:0,foul:0}, statTotal:{game:0,gameStart:0,play:0,point:0,fBPoint:0,pointer3:0,pointer2:0,dunk:0,freeThrow:0,miss:0, miss3:0,missFt:0,assist:0,dBoard:0,oBoard:0,steal:0,block:0,drive:0,allow:0,turnOver:0,foul:0},injury:false,injuryLength:1, height : generatePlayer[3], contract: generatePlayer[4], position1: generatePlayer[5], position2: generatePlayer[5], position3: generatePlayer[5], weight: generatePlayer[6], age: generatePlayer[7], speed: skillArray[0], shooting: skillArray[1], defence: skillArray[2], ballControl: skillArray[3], endurance: skillArray[4], vision: skillArray[5], clutch: skillArray[6], rebounding: skillArray[7], speedPot: skillArray[8], shootingPot: skillArray[9], defencePot: skillArray[10], ballConPot: skillArray[11], endurPot: skillArray[12], visionPot: skillArray[13], clutchPot: skillArray[14], reboundPot: skillArray[15], avgSkill: generatePlayer[8], avgPot: generatePlayer[9], draft: year});
   return generatePlayer[2];
 }
 //CHECK IF SIM IS DUE. CHANGE simRATE VARIABLE TO CHANGE HOW OFTEN SIM.
@@ -511,26 +511,32 @@ function onlyHealthy(obj, teamId){
 function findPosition(obj){
   //console.log("find position run");
   var benchObj = {};
-  var posObj={};
+  var posObj={g1:false,g2:false,g3:false,f1:false,f2:false,f3:false,c1:false,c2:false,c3:false,b1:false,b2:false,b3:false};
   for(var pName in obj){
-    //console.log("pName = "+pName);
-    var posId = obj[pName].position;
-    if (posId == "guard1"){posObj.g1 = obj[pName];console.log("g1 assigned");}
-    else if (posId == "forward1"){posObj.f1[pName] = obj[pName];console.log("f1 assigned");}
-    else if (posId == "center1"){posObj.c1[pName] = obj[pName];console.log("c1 assigned");}
-    else if (posId == "guard2"){posObj.g2[pName] = obj[pName];console.log("g2 assigned");}
-    else if (posId == "forward2"){posObj.f2[pName] = obj[pName];console.log("f2 assigned");}
-    else if (posId == "center2"){posObj.c2[pName] = obj[pName];console.log("c2 assigned");}
-    else if (posId == "guard3"){posObj.g3[pName] = obj[pName];console.log("g3 assigned");}
-    else if (posId == "forward3"){posObj.f3[pName] = obj[pName];console.log("f3 assigned");}
-    else if (posId == "center3"){posObj.c3[pName] = obj[pName];console.log("c3 assigned");}
-    else if (posId == "bench1"){posObj.b1[pName] = obj[pName];console.log("b1 assigned");}
-    else if (posId == "bench2"){posObj.b2[pName] = obj[pName];console.log("b2 assigned");}
-    else if (posId == "bench3"){posObj.b3[pName] = obj[pName];console.log("b3 assigned");}
+    var alsoBench=false;
+    for (var i = 1; i<=3; i++) { //NEEDED: CORRECT ALL INSTANCES OF POSITION. NOW POSITION 1 2 AND 3.
+      var posId = obj[pName]["position"+i];
+      console.log("position"+i+" of "+pName+" is "+posId);
+      if (posId == "g1"){posObj["g1"] = {[pName] : obj[pName]};
+        console.log("g1 found: "+ pName);
+        i = 4;
+      }
+      else if (posId == "f1"){posObj.f1= {[pName] : obj[pName]}; i = 4;}
+      else if (posId == "c1"){posObj.c1= {[pName] : obj[pName]}; i = 4;}
+      else if (posId == "g2"){posObj.g2= {[pName] : obj[pName]};}
+      else if (posId == "f2"){posObj.f2= {[pName] : obj[pName]};}
+      else if (posId == "c2"){posObj.c2= {[pName] : obj[pName]};}
+      else if (posId == "g3"){posObj.g3= {[pName] : obj[pName]};}
+      else if (posId == "f3"){posObj.f3= {[pName] : obj[pName]};}
+      else if (posId == "c3"){posObj.c3= {[pName] : obj[pName]};}
       else{
-        //console.log(pName+" is not assigned to a position.");
+        alsoBench = true;
+      }
+      if(i ==3 && alsoBench){
+        console.log(pName+" was not previously assigned to a position by user.");
         benchObj[pName] = obj[pName];
       }
+    }
   }
   // for(var y in benchObj){
   //   console.log("bench object item: " + y);
@@ -573,31 +579,28 @@ function findPosition(obj){
     //   }
     // }
   //}
-  orderObj = benchObj;// temp fix.
+  orderObj = benchObj;// NEEDED: temp fix. DELETE WHEN FIXED FUNCTION
   // for(var y in orderObj){
   //   console.log("order object item: " + y);
   // }
-  for(var y in posObj){
-    console.log("possition object item: " + y);
-  }
+  // for(var y in posObj){
+  //   console.log("possition object item: " + y);
+  // }
   var i = 1;
-  if (!posObj.g1){posObj.g1 = placePosObj(orderObj, obj, i); i++;}
+  if (!posObj.g1){posObj.g1 = placePosObj(orderObj, obj, i); i++; }
   if (!posObj.f1){posObj.f1 = placePosObj(orderObj, obj, i); i++;}
-  if (!posObj.c1){posObj.c1 = placePosObj(orderObj, obj, i); i++;}
-  if (!posObj.g2){posObj.g2 = placePosObj(orderObj, obj, i);}
-  if (!posObj.f2){posObj.f2 = placePosObj(orderObj, obj, i);}
-  if (!posObj.c2){posObj.c2 = placePosObj(orderObj, obj, i);}
+  if (!posObj.c1){posObj.c1 = placePosObj(orderObj, obj, i); i++; }
+  if (!posObj.g2){posObj.g2 = placePosObj(orderObj, obj, i); }
+  if (!posObj.f2){posObj.f2 = placePosObj(orderObj, obj, i); }
+  if (!posObj.c2){posObj.c2 = placePosObj(orderObj, obj, i); }
   i++;
-  if (!posObj.g3){posObj.g3 = placePosObj(orderObj, obj, i); }
-  if (!posObj.f3){posObj.f3 = placePosObj(orderObj, obj, i); }
-  if (!posObj.c3){posObj.c3 = placePosObj(orderObj, obj, i); }
+  if (!posObj.g3){posObj.g3 = placePosObj(orderObj, obj, i);  }
+  if (!posObj.f3){posObj.f3 = placePosObj(orderObj, obj, i);  }
+  if (!posObj.c3){posObj.c3 = placePosObj(orderObj, obj, i);  }
   i++;
-  if (!posObj.b1){posObj.b1 = placePosObj(orderObj, obj, i);i++;}
-  if (!posObj.b2){posObj.b2 = placePosObj(orderObj, obj, i);i++;}
-  if (!posObj.b3){posObj.b3 = placePosObj(orderObj, obj, i);i++;}
-  for(var sStat in posObj){
-    //console.log("set status: "+sStat);
-  }
+  if (!posObj.b1){posObj.b1 = placePosObj(orderObj, obj, i);i++; }
+  if (!posObj.b2){posObj.b2 = placePosObj(orderObj, obj, i);i++; }
+  if (!posObj.b3){posObj.b3 = placePosObj(orderObj, obj, i);i++; }
   // for(var y in posObj){
   //   console.log("possition object item: " + y);
   // }
@@ -612,28 +615,29 @@ function placePosObj(orderObj, obj,i){
     //console.log ("orderObj for in: "+player);
     if(i==y){
       tempObj[player] = obj[player];
+      return tempObj;
     }
     y++;
   }
-  return tempObj;
 }
-function moveToBench(benchObj, teamObj){
-  var finish =  false;
-  var changedTeam = teamObj;
-  for(var benchP in benchObj){
-    for(var pos in team){
-      for(var teamP in team[pos]){
-        if (benchP == teamP){
-          changedTeam[pos][teamP] = benchObj[benchP];
-          console.log(benchP+" has been saved to the team possition "+pos);
-          finish = true;
-          return changedTeam;
-        }
-      }
-    }
-  }
-  if (!finish){alert("ERROR: EXHAUSTED STARTER NOT SAVED TO TEAM ARRAY.");}
-}
+//NEEDED: DELETE BELOW FUNCTION.
+// function moveToBench(benchObj, teamObj){
+//   var finish =  false;
+//   var changedTeam = teamObj;
+//   for(var benchP in benchObj){
+//     for(var pos in team){
+//       for(var teamP in team[pos]){
+//         if (benchP == teamP){
+//           changedTeam[pos][teamP] = benchObj[benchP];
+//           console.log(benchP+" has been saved to the team possition "+pos);
+//           finish = true;
+//           return changedTeam;
+//         }
+//       }
+//     }
+//   }
+//   if (!finish){alert("ERROR: EXHAUSTED STARTER NOT SAVED TO TEAM ARRAY.");}
+// }
 //ADVANCE DAY AND SIM GAMES.
 function simGames(){//NEEDED: ADD INJURY CHANCE DURING GAME.
   console.log("sim Games run");
@@ -658,7 +662,6 @@ function simGames(){//NEEDED: ADD INJURY CHANCE DURING GAME.
       var team2Stats = {};
       console.log(" matchup is "+team1Name+" vs. "+team2Name);
       var playResult;
-      var startNameArray =[];
       var tempObj;
       var gameStats={t2Name:team2Name, t1Score:0,t2Score:0,}
       var t1 = {};
@@ -675,8 +678,8 @@ function simGames(){//NEEDED: ADD INJURY CHANCE DURING GAME.
       var t1F=t1.f1;
       var t1C=t1.c1;
       var t2G = t2.g1;
-      var t2F=t2.f2;
-      var t2C=t2.c2;
+      var t2F=t2.f1;
+      var t2C=t2.c1;
       var offencePlay ="t1";
       //BEGIN GAME LOOP
       for(var gameLength = 5; gameLength > 0; gameLength-- ){
@@ -684,12 +687,14 @@ function simGames(){//NEEDED: ADD INJURY CHANCE DURING GAME.
         for(var x in t2C){
           console.log("t2C before endurance check: "+ t2C[x]["endurance"]);
         }
-        startNameArray[0]= checkEndur(t1, "g", t1G, startNameArray);//NEEDED: DOUBLE CHECK IF T1G IS BEING CHANGED.
-        startNameArray[1] = checkEndur(t1, "f", t1F, startNameArray);
-        startNameArray[2] = checkEndur(t1, "c", t1C, startNameArray);
-        startNameArray[3] = checkEndur(t2, "g", t2G, startNameArray);
-        startNameArray[4] = checkEndur(t2, "f", t2F, startNameArray);
-        startNameArray[5] = checkEndur(t2, "c", t2C, startNameArray);
+        var startNameArray =[];
+        t1G= checkEndur(t1, "g", t1G, startNameArray);
+        //for(var x in t1G){startNameArray[0]=x;}
+        t1F = checkEndur(t1, "f", t1F, startNameArray);
+        t1C = checkEndur(t1, "c", t1C, startNameArray);
+        t2G = checkEndur(t2, "g", t2G, startNameArray);
+        t2F = checkEndur(t2, "f", t2F, startNameArray);
+        t2C = checkEndur(t2, "c", t2C, startNameArray);
         console.log("startNameArray: "+ startNameArray);
         for(var x in t1G){
           console.log("t1G after endurance check: "+ t1G[x]["endurance"]);
@@ -726,6 +731,9 @@ function simGames(){//NEEDED: ADD INJURY CHANCE DURING GAME.
           t2G =  playResult.dG;
           t2F =  playResult.dF;
           t2C = playResult.dC;
+          console.log("center objects:");
+          console.log(t1C);
+          console.log(t2C);
           if (playResult.side == "off") {offencePlay ="t1";}
           else{offencePlay ="t2";}
           //console.log(t1G);
@@ -740,6 +748,9 @@ function simGames(){//NEEDED: ADD INJURY CHANCE DURING GAME.
           t2G =  playResult.oG;
           t2F =  playResult.oF;
           t2C = playResult.oC;
+          console.log("center objects:");
+          console.log(t1C);
+          console.log(t2C);
           if (playResult.side == "off") {offencePlay ="t2";}
           else{offencePlay ="t1";}
           if (playResult.score < 0){gameStats.t1Score += Math.abs(playResult.score);}// NEGATIVE REPRESENTS DEF SCORE
@@ -884,7 +895,7 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
             if (playersInQ.pos == "F"){gameObj.oF = playersInQ.offP; gameObj.dF = playersInQ.defP;}
             else{gameObj.oF = offF; gameObj.dF = defF;}
             if (playersInQ.pos == "C"){gameObj.oC = playersInQ.offP; gameObj.dC = playersInQ.defP;}
-            else{gameObj.oC = offC; gameObj.dFC = defC;}
+            else{gameObj.oC = offC; gameObj.dC = defC;}
             return gameObj;
             //break;
           }
@@ -897,7 +908,7 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
         if (playersInQ.pos == "F"){gameObj.oF = playersInQ.offP; gameObj.dF = playersInQ.defP;}
         else{gameObj.oF = offF; gameObj.dF = defF;}
         if (playersInQ.pos == "C"){gameObj.oC = playersInQ.offP; gameObj.dC = playersInQ.defP;}
-        else{gameObj.oC = offC; gameObj.dFC = defC;}
+        else{gameObj.oC = offC; gameObj.dC = defC;}
         return gameObj;
         //break;
       }
@@ -927,9 +938,8 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
       if (playersInQ.pos == "F"){gameObj.oF = playersInQ.offP; gameObj.dF = playersInQ.defP;}
       else{gameObj.oF = offF; gameObj.dF = defF;}
       if (playersInQ.pos == "C"){gameObj.oC = playersInQ.offP; gameObj.dC = playersInQ.defP;}
-      else{gameObj.oC = offC; gameObj.dFC = defC;}
+      else{gameObj.oC = offC; gameObj.dC = defC;}
       return gameObj;
-      //break;
     }
     //REBOUND TO DETERMINE POSSESION AND BALL POSITION.
     else if(visionResult.rebound){
@@ -962,14 +972,15 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
       console.log("assist opportunity");
       fastResult = visionResult.assist;
       var randPos = randNum(1,3);
+      console.log("random target for pass is"+randPos+". and the passing position is "+playersInQ.pos);
       if (randPos ==1 && playersInQ.pos != "C"){playersInQ={offP:offC,defP:defC, assist:fastResult , pos:"C"};}
       else if (randPos == 1 && playersInQ.pos != "F"){playersInQ={offP:offF,defP:defF, assist:fastResult , pos:"F"};}
       else if (randPos == 2 && playersInQ.pos != "F"){playersInQ={offP:offF,defP:defF, assist:fastResult , pos:"F"};}
-      else if (randPos == 2 && playersInQ.pos != "G"){playersInQ={offP:offG,defP:defG, assist:fastResult , pos:"G"};}
+      else if (randPos == 2 && playersInQ.pos != "C"){playersInQ={offP:offC,defP:defC, assist:fastResult , pos:"C"};}
       else if (randPos == 3 && playersInQ.pos != "G"){playersInQ={offP:offG,defP:defG, assist:fastResult , pos:"G"};}
-      else if (randPos == 3 && playersInQ.pos != "C"){playersInQ={offP:offC,defP:defC, assist:fastResult , pos:"C"};}
+      else if (randPos == 3 && playersInQ.pos != "F"){playersInQ={offP:offF,defP:defF, assist:fastResult , pos:"F"};}
       else{alert("ERROR 919: PASS NO ASSIST PLAYER RECIEVED");}
-      ballPosition -= 1;
+      ballPosition -= randPos;
       if (ballPosition<0 || ballPosition > 3){
         ballPosition = 0;
         console.log("had to adj ball position to 0. It was out of range.");
@@ -979,17 +990,23 @@ function runPlay(offG, offF, offC, defG, defF, defC, gameLength){
       }
     }
     //ERROR WARNING
-    else{alert("ERROR 924. NO VISION RESULT FOUND!!!");}
+    else{alert("ERROR 991. NO VISION RESULT FOUND!!!");}
   }//END OF PLAY LOOP
 
   //FINALLY, RETURN OBJ TO GAME LOOP. INCLUDE .SIDE TO NOTE WHO HAS BALL NEXT.
-  if(typeof playersInQ.pos == 'undefined'){console.log("!!!!WARNING, V.SIDE PLAYERSINQ.POS EMPTY!!!");}
-  if (playersInQ.pos == "G"){gameObj.oG = playersInQ.offP; gameObj.dG = playersInQ.defP;}
+  if(typeof playersInQ.pos == 'undefined'){alert("ERROR 995: PLAYERSINQ.POS EMPTY");}
+  if (playersInQ.pos == "G"){
+    gameObj.oG = playersInQ.offP;
+    gameObj.dG = playersInQ.defP;
+    for(var x in gameObj.oG){
+      console.log(x +" returned as offensive guard to the simGames function.");
+    }
+  }
   else{gameObj.oG = offG; gameObj.dG = defG;}
   if (playersInQ.pos == "F"){gameObj.oF = playersInQ.offP; gameObj.dF = playersInQ.defP;}
   else{gameObj.oF = offF; gameObj.dF = defF;}
   if (playersInQ.pos == "C"){gameObj.oC = playersInQ.offP; gameObj.dC = playersInQ.defP;}
-  else{gameObj.oC = offC; gameObj.dFC = defC;}
+  else{gameObj.oC = offC; gameObj.dC = defC;}
   return gameObj;
 }
 
@@ -1005,7 +1022,8 @@ function checkEndur(team, startPos, curPlayer,startNameArray){
         curPlayer[player].endurance -= 20;//NEEDED: REPLACE WITH THE NUMBER 3 WHEN IN ALPHA.
         curPlayer[player].stats.play += 1;
         done = true;
-        return player;
+        startNameArray.push(player);
+        return curPlayer;
       }else{
         console.log(player+" has been subbed to the bench to rest");
       }
@@ -1023,7 +1041,8 @@ function checkEndur(team, startPos, curPlayer,startNameArray){
           curPlayer = team[startPos + i ];
           console.log(target+" has been assigned to "+startPos+". His endurance is "+curPlayer[target]["endurance"]);
           done = true;
-          return target;
+          startNameArray.push(target);
+          return curPlayer;
         }
       }
     }
@@ -1040,8 +1059,9 @@ function checkEndur(team, startPos, curPlayer,startNameArray){
             team[position][target].stats.play += 1;
             console.log(target+" is called off the bench, to the position "+startPos);
             curPlayer = team[position];
+            startNameArray.push(target);
             done = true;
-            return target;
+            return curPlayer;
           }
         }
       }
@@ -1247,7 +1267,6 @@ function runVisionCheck(offP,defP,gameLength, ballPosition, assist){
           }
         }
       }
-      //for(x in defP){}//IF DEFENSIVE PLAYER NEEDS A STAT WHEN THE SHOT WAS GOOD.
       duelObj.side = "def";
     }else{
       for(x in offP){
@@ -1292,9 +1311,10 @@ function runPassBall(hasBall,defendBall, gameLength){
         if(gameLength<40){dc = (defendBall[defend].clutch)/5;}
         var dv = defendBall[defend].vision;
         var dd = defendBall[defend].defence;
-        var chance = (((hv+hb+hc)-(dv+dd+dc))*0.2)+74; //NEEDED: MAKE SURE THIS USES DIFFERENT SKILLS THAN DRIBBLE. ALSO, INCLUDE BALL POSITION.
-        console.log("pass chance should be: "+chance);
+        var chance = (((hv+hb+hc)-(dv+dd+dc))*0.2)+74; //NEEDED: MAKE SURE THIS USES DIFFERENT SKILLS THAN DRIBBLE. ALSO, INCLUDE BALL .
+        chance=roundToTwo(chance);
         var roll = randNum(0,100);
+        console.log("pass chance should be: "+chance+" and a roll of "+roll);
         if (roll < chance) {
           passObj.chance = chance;
           return passObj;
@@ -1326,15 +1346,7 @@ function runShootBall(hasBall,defendBall,gameLength,ballPosition){
         adjH = roundToTwo(adjH);
         var chance = (((hs+hc)-(dd+dc))*.3) + (60 - bp) + adjH;
         chance = roundToTwo(chance);
-        //var roll = randNum(0,100);
         console.log("Shot at ball position: "+ ballPosition +". Base shooting chance: "+ (60 - bp) +". Height adjust: "+adjH+". Total chance: "+chance);
-        // if (roll < chance) {
-        //   return chance;
-        //   noRepeat = 1;
-        // }else{
-        //   return false;
-        //   noRepeat = 1;
-        // }
         return chance;
       }
     }
@@ -1475,7 +1487,7 @@ function signPlayer(){
       if(typeof userTeamName != 'string'){userTeamName = (userArrayComplete.child("team").val()); console.log("used userArrayComplete.child");}
       var tempPlayer = leagueArrayComplete.child("team16").child(playerName).val();
       fireRef.child("leagueArray").child(userLeagueName).child(userTeamName).child(playerName).set(tempPlayer);
-      fireRef.child("leagueArray").child(userLeagueName).child(userTeamName).child(playerName).update({position:"bench"});
+      fireRef.child("leagueArray").child(userLeagueName).child(userTeamName).child(playerName).update({position1:"bench",position2:"bench",position3:"bench"});
       fireRef.child("leagueArray").child(userLeagueName).child("team16").child(playerName).remove();
       window.location.assign("fbs3.html");
       //NEEDED :STILL HAVE TO ADJUST TEAM SALARY.
@@ -1538,7 +1550,7 @@ function playerGlance(){
         });
       }
     });
-    $('#playerGlance > tbody:last-child').append('<tr><td>'+playerName+'</td><td>'+playerAge+'</td><td>'+playerInfo[13]+"in."+'</td><td>'+playerInfo[2]+"/"+playerInfo[1]+'</td><td>'+playerInfo[19]+"/"+playerInfo[20]+'</td><td>'+playerInfo[8]+"/"+playerInfo[9]+'</td><td>'+playerInfo[4]+"/"+playerInfo[3]+'</td><td>'+playerInfo[18]+"/"+playerInfo[17]+'</td><td>'+playerInfo[21]+"/"+playerInfo[22]+'</td><td>'+playerInfo[12]+"/"+playerInfo[11]+'</td><td>'+playerInfo[23]+"/"+playerInfo[24]+'</td><td>'+playerInfo[5]+"/"+playerInfo[6]+'</td><td>'+playerInfo[14]+'</td></tr>');
+    $('#playerGlance > tbody:last-child').append('<tr><td>'+playerName+'</td><td>'+playerAge+'</td><td>'+playerInfo[13]+"in."+'</td><td>'+playerInfo[2]+"/"+playerInfo[1]+'</td><td>'+playerInfo[21]+"/"+playerInfo[22]+'</td><td>'+playerInfo[8]+"/"+playerInfo[9]+'</td><td>'+playerInfo[4]+"/"+playerInfo[3]+'</td><td>'+playerInfo[20]+"/"+playerInfo[19]+'</td><td>'+playerInfo[23]+"/"+playerInfo[24]+'</td><td>'+playerInfo[12]+"/"+playerInfo[11]+'</td><td>'+playerInfo[25]+"/"+playerInfo[26]+'</td><td>'+playerInfo[5]+"/"+playerInfo[6]+'</td><td>'+playerInfo[14]+'</td></tr>');
     $('#statGlance > tbody:last-child').append('<tr><td>'+statInfo[0]+'</td><td>'+statInfo[1]+'</td><td>'+statInfo[2]+'</td><td>'+statInfo[3]+'</td><td>'+statInfo[4]+'</td><td>'+statInfo[5]+'</td><td>'+statInfo[6]+'</td><td>'+statInfo[7]+'</td><td>'+statInfo[8]+'</td><td>'+statInfo[9]+'</td><td>'+statInfo[10]+'</td></tr>');
   }
   if(typeof userArrayComplete =='object'){userTeamName=userArrayComplete.child("team").val();}
@@ -1551,9 +1563,9 @@ function depthFill(){
   if(typeof leagueArrayComplete != 'object'){
     if(typeof userLeagueName == 'string'){var leaguePromise = leagueSnapshot(userLeagueName); console.log("used userLeagueName: "+ userLeagueName);}
     else if(typeof userArrayComplete == 'object'){var leaguePromise = leagueSnapshot(userArrayComplete.child("league").val()); console.log("used userArrayComplete.child");}
-    else{alert("ERROR 1411: depth fill was run without a user league name."); window.location.assign("index.html");}
+    else{alert("ERROR 1566: depth fill was run without a user league name."); window.location.assign("index.html");}
     leaguePromise.fail(function(){
-      alert("ERROR 1413: leaguePromise failed: Was not able to contact server.");
+      alert("ERROR 1568: leaguePromise failed: Was not able to contact server.");
     });
     leaguePromise.done(function(snap){
       console.log("league promise done.");
@@ -1567,31 +1579,54 @@ function depthFill(){
   }
   if(typeof leagueArrayComplete == 'object'){
     var guardStart, forwardStart, centerStart;
+    var multiGuard = false;
+    var multiForward = false;
+    var multiCenter = false;
     avoidBrokenLoop=0;
-    for (var y = 1; y<4; y++) {
-      $("#guard"+y+"Select").empty().append('<option disabled selected value=false> -- Who will be your '+y+' guard? -- </option>');
-      $("#forward"+y+"Select").empty().append('<option disabled selected value=false> -- Who will be your '+y+' forward? -- </option>');
-      $("#center"+y+"Select").empty().append('<option disabled selected value=false> -- Who will be your '+y+' center? -- </option>');
+    for (var y = 1; y<=3; y++) {
+      $("#g"+y+"Select").empty().append('<option disabled selected value=false> -- Who will be your # '+y+' guard? -- </option>');
+      $("#f"+y+"Select").empty().append('<option disabled selected value=false> -- Who will be your # '+y+' forward? -- </option>');
+      $("#c"+y+"Select").empty().append('<option disabled selected value=false> -- Who will be your # '+y+' center? -- </option>');
       leagueArrayComplete.child(userTeamName).forEach(function(playerSnap){
-        if(typeof playerSnap.child("position").val()== 'string'){
+        multiGuard = multiForward = multiCenter = false;
+        if(typeof playerSnap.child("position"+y).val()== 'string'){
+          //console.log(typeof playerSnap.child("position"+y).val());
           if(playerSnap.key()!=guardStart && playerSnap.key()!=forwardStart && playerSnap.key()!=centerStart){
-              if(playerSnap.child("position").val() == "g"+y){
-                $("#guard"+y+"Select").prepend('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');
+            //console.log(playerSnap.key()+" is not yet recorded as a starter.");
+              if(playerSnap.child("position"+y).val() == "g"+y){
+                //console.log(playerSnap.key()+"'s position"+y+" was equal to g"+y);
                 if(y==1){guardStart=playerSnap.key();}
+                if(y==3 && playerSnap.child("position2").val() == "g2"){
+                  multiGuard=true;
+                  fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(userTeamName).child(playerSnap.key()).update({position3:"bench"});
+                }
+                if(!multiGuard){$("#g"+y+"Select").prepend('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');}
+                multiGuard = true;
               }
-              else if (playerSnap.child("position").val() == "f"+y) {
-                $("#forward"+y+"Select").prepend('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');
+              else if (playerSnap.child("position"+y).val() == "f"+y) {
+                //console.log(playerSnap.key()+"'s position"+y+" was equal to f"+y);
+                if(y==3 && playerSnap.child("position2").val() == "f2"){
+                  multiForward=true;
+                  fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(userTeamName).child(playerSnap.key()).update({position3:"bench"});
+                }
+                if(!multiForward){$("#f"+y+"Select").prepend('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');}
+                multiForward=true;
                 if(y==1){forwardStart=playerSnap.key();}
               }
-              else if (playerSnap.child("position").val() == "c"+y) {
-                $("#center"+y+"Select").prepend('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');
+              else if (playerSnap.child("position"+y).val() == "c"+y) {
+                //console.log(playerSnap.key()+"'s position"+y+" was equal to c"+y);
+                if(y==3 && playerSnap.child("position2").val() == "c2"){
+                  multiCenter=true;
+                  fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(userTeamName).child(playerSnap.key()).update({position3:"bench"});
+                }
+                if(!multiCenter){$("#c"+y+"Select").prepend('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');}
                 if(y==1){centerStart=playerSnap.key();}
+                multiCenter=true;
               }
-              else {
-                $("#guard"+y+"Select").append('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');
-                $("#forward"+y+"Select").append('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');
-                $("#center"+y+"Select").append('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');
-              }
+              //console.log(playerSnap.key()+"'s position"+y+" was added to the drop down menu");
+              if(!multiGuard){$("#g"+y+"Select").append('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');}
+              if(!multiForward){$("#f"+y+"Select").append('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');}
+              if(!multiCenter){$("#c"+y+"Select").append('<option value="'+playerSnap.key()+'">'+playerSnap.key()+'</option>');}
             }
          }//else{console.log(playerSnap.key() +" not a player ");}
       });
@@ -1600,16 +1635,26 @@ function depthFill(){
   }
 }
 //DEPTH CHART PULL DOWNS CHANGED.
-function depthChange(selectPlayer, location){
+function depthChange(selectPlayer, location, depthPos){
   var oldVal;
   console.log("value retrieved is: "+ selectPlayer+" and "+location);
   oldVal = $('select[name=' + location + '] :nth-child(1)').val();
+  for (var i = 3; i >= 1; i--) {
+    if(leagueArrayComplete.child(userTeamName).child(selectPlayer).child("position"+i).val() == location+i){
+      console.log(selectPlayer+" was previsouly assigned to "+location+i);
+      if(depthPos<i){
+        fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(userTeamName).child(selectPlayer).child("position"+i).set("bench");
+        $("#"+location+depthPos+"Select").prop('selectedIndex', 0);
+      }
+    }
+  };
   if(oldVal!="false"){
     console.log("old val found to be a player: "+oldVal);
-    fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(userTeamName).child(oldVal).child("position").set("bench");
+    fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(userTeamName).child(oldVal).child("position"+depthPos).set("bench");
   }
-  fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(userTeamName).child(selectPlayer).child("position").set(location);
+  fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(userTeamName).child(selectPlayer).child("position"+depthPos).set(location+depthPos);
 }
+//SIMPLE FUNCTION TO ROUND DECIMAL NUMBERS TO 2 PLACES.
 function roundToTwo(num) {
     return +(Math.round(num + "e+2")  + "e-2");
 }
