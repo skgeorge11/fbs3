@@ -54,7 +54,19 @@
                     <tbody></tbody>
                 </table>
                 <br>
-                <button id="addDropButton" >Contract</button>
+                <div style="background:white; width:150px;" id ="playerContractInput" value=0>contract</div>
+                <select id="playerLengthInput" style="background:white; width:150px;">
+                    <option value = 1.15 >1 years</option>
+                    <option value = 1.05 >2 years</option>
+                    <option value = 1 selected="selected">3 years</option>
+                    <option value = 0.95 >4 years</option>
+                    <option value = 0.9 >5 years</option>
+                    <option value = 0.85 >6 years</option>
+                    <option value = 0.8 >7 years</option>
+                </select>
+                <br>
+                <button id="addButton" >Add</button>
+                <button id="dropButton" >Drop</button>
                 <script type="text/javascript">playerGlance();</script>
                 <br><br>
             </div>

@@ -14,6 +14,7 @@ var userId;
 var userPassword;
 var userLeagueName;
 var userTeamName;
+var userTeamSalary;
 var playerName ;
 var userLoginDate;
 var avoidBrokenLoop;
@@ -42,6 +43,7 @@ if(navigator.cookieEnabled && storageType != "file") {
     userId = Cookies.get('userIdCookie');
     userPassword =Cookies.get('userPasswordCookie');
     userArrayComplete = Cookies.get('userArrayCookie');
+    userTeamSalary = Cookies.get('userSalaryCookie')
     playerName = Cookies.get('playerNameCookie');
     console.log("cookies enabled: "+userId);
 }else if(typeof(Storage) !== "undefined") {
@@ -50,6 +52,7 @@ if(navigator.cookieEnabled && storageType != "file") {
     userPassword = localStorage.localUserPassword;
     userLeagueName = localStorage.localUserLeague;
     userTeamName = localStorage.localUserTeam;
+    userTeamSalary = localStorage.localUserSalary;
     playerName = localStorage.localPlayerName;
     console.log("user variables taken from localStorage: "+userId);
   }
@@ -201,19 +204,20 @@ function teamGlanceFill(teamName){
   }else{
     console.log("league array saved locally. Name: "+leagueArrayComplete.key());
     checkSim();
-    teamYearCheck(teamName);
     depthFill();
     var path = window.location.pathname;
     var page = path.split("/").pop();
     console.log( page );
     if (page == 'freeagent.html'){teamName = "team16";}
+    else{salaryGlance(teamName);}
+    teamYearCheck(teamName);
     $('#teamContain').css("display","inline-block");
     $('#teamGlance > tbody').html('');
     var i=0;
     leagueArrayComplete.child(teamName).forEach(function(teamSnap) {
       var playerInfo=[];
       var playerAge = 0;
-      if(teamSnap.key() != "owner" && teamSnap.key() != "nameAssign" && teamSnap.key() != "tYear" && teamSnap.key() !=    "stats" && teamSnap.key()!= "statTotal"){
+      if(typeof teamSnap.val() == "object" && teamSnap.key() != "stats" && teamSnap.key()!= "statTotal"){
         teamSnap.forEach(function(playerSnap) {
           if(typeof playerSnap.val() !="object"){playerInfo.push(playerSnap.val());}
           if(playerSnap.key() == "draft"){
@@ -253,16 +257,21 @@ function teamYearCheck(teamName){
   console.log("The league year is: "+leagueYear+", and the team year is: "+teamYear);
   while(leagueYear>teamYear){
     counter++;
-    if(counter>2){alert("ERRor 245: broken loop while updating team.");break;}
+    if(counter>2){alert("ERRor 257: broken loop while updating team.");break;}
     leagueArrayComplete.child(teamName).forEach(function(playerSnap){
-      if(typeof playerSnap.val() == 'object' && playerSnap.key() != "stats"){
+      if(typeof playerSnap.val() == 'object' && playerSnap.key() != "stats"&& playerSnap.key() != "statTotal"){
         //NEEDED: CHANGE ALL PLAYERS AGING STATS AND UPDATE THEM IN FIREBASE.
         console.log("aging player "+playerSnap.key()+ " by one year");
-        if(playerSnap.child("shootingPot").val() > playerSnap.child("shooting").val()){
-          console.log(playerSnap.key() + " shooting has been increased.");
+        var reducedLength = playerSnap.child("contractLength").val() -1;
+        if(reducedLength>0){
+          fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(teamName).child(playerSnap.key()).update({contractLength:reducedLength});
+        }else if(teamName == "team16"){
+          console.log("player was found to already be a free agent.")
         }
-      }else{console.log("player "+playerSnap.key()+ " found to not be a player object");}
+        else if(reducedLength <=0){playerName = playerSnap.key(); dropPlayer(true);}
+      }
     });
+    fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(teamName).child(teamYear).remove();
     teamYear ++;
     console.log("added one to the team year: "+teamYear);
     fireRef.child("leagueArray").child(leagueArrayComplete.key()).child(teamName).update({tYear:teamYear});
@@ -437,7 +446,16 @@ function addPlayer(source,leagueName,teamName,year){
     skillAverage = potentialSkill;
     goalAverage = potentialSkill;
   };
-  fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({stats:{game:0,gameStart:0,play:0,point:0,fBPoint:0,pointer3:0,pointer2:0,dunk:0,freeThrow:0,miss:0, miss3:0,missFt:0,assist:0,dBoard:0,oBoard:0,steal:0,block:0,drive:0,allow:0,turnOver:0,foul:0}, statTotal:{game:0,gameStart:0,play:0,point:0,fBPoint:0,pointer3:0,pointer2:0,dunk:0,freeThrow:0,miss:0, miss3:0,missFt:0,assist:0,dBoard:0,oBoard:0,steal:0,block:0,drive:0,allow:0,turnOver:0,foul:0},injury:false,injuryLength:1, height : generatePlayer[3], contract: generatePlayer[4], position1: generatePlayer[5], position2: generatePlayer[5], position3: generatePlayer[5], weight: generatePlayer[6], age: generatePlayer[7], speed: skillArray[0], shooting: skillArray[1], defence: skillArray[2], ballControl: skillArray[3], endurance: skillArray[4], vision: skillArray[5], clutch: skillArray[6], rebounding: skillArray[7], speedPot: skillArray[8], shootingPot: skillArray[9], defencePot: skillArray[10], ballConPot: skillArray[11], endurPot: skillArray[12], visionPot: skillArray[13], clutchPot: skillArray[14], reboundPot: skillArray[15], avgSkill: generatePlayer[8], avgPot: generatePlayer[9], draft: year});
+  if(teamName != "team16"){
+    var tempAvgTot = ((generatePlayer[9]+generatePlayer[8])/20);
+    var tempPow =tempAvgTot/4;
+    if(tempPow <1){tempPow =1;}
+    var tempContract = roundToTwo(Math.pow(tempAvgTot, tempPow));
+    generatePlayer.push(tempContract);
+    generatePlayer.push(1);
+  }else {generatePlayer.push("Free Agent");generatePlayer.push(0);}
+
+  fireRef.child("leagueArray").child(generatePlayer[0]).child(generatePlayer[1]).child(generatePlayer[2]).set({stats:{game:0,gameStart:0,play:0,point:0,fBPoint:0,pointer3:0,pointer2:0,dunk:0,freeThrow:0,miss:0, miss3:0,missFt:0,assist:0,dBoard:0,oBoard:0,steal:0,block:0,drive:0,allow:0,turnOver:0,foul:0}, statTotal:{game:0,gameStart:0,play:0,point:0,fBPoint:0,pointer3:0,pointer2:0,dunk:0,freeThrow:0,miss:0, miss3:0,missFt:0,assist:0,dBoard:0,oBoard:0,steal:0,block:0,drive:0,allow:0,turnOver:0,foul:0},injury:false,injuryLength:1, height : generatePlayer[3], contract: generatePlayer[10],contractLength:generatePlayer[11], position1: generatePlayer[5], position2: generatePlayer[5], position3: generatePlayer[5], weight: generatePlayer[6], age: generatePlayer[7], speed: skillArray[0], shooting: skillArray[1], defence: skillArray[2], ballControl: skillArray[3], endurance: skillArray[4], vision: skillArray[5], clutch: skillArray[6], rebounding: skillArray[7], speedPot: skillArray[8], shootingPot: skillArray[9], defencePot: skillArray[10], ballConPot: skillArray[11], endurPot: skillArray[12], visionPot: skillArray[13], clutchPot: skillArray[14], reboundPot: skillArray[15], avgSkill: generatePlayer[8], avgPot: generatePlayer[9], draft: year});
   return generatePlayer[2];
 }
 //CHECK IF SIM IS DUE. CHANGE simRATE VARIABLE TO CHANGE HOW OFTEN SIM.
@@ -456,10 +474,17 @@ function checkSim(){
         var nextYear = leagueArrayComplete.child("year").val() +1;
         var tempMatchArray = createMatchups();
         fireRef.child('leagueArray').child(leagueArrayComplete.key()).child("matchUps").set(tempMatchArray);
-        for (var i = 16; i > 0; i--) {
-          var tempPlayer = addPlayer(0, leagueArrayComplete.key(), "team16", nextYear);//source,leagueName,teamName,year
-          console.log("added " +tempPlayer +" to free Agrents");
-        };
+        var freeCount = 0;
+        for (var x in leagueArrayComplete.child("team16").val()){
+          freeCount++;
+        }
+        console.log("the number of free agents was found to be "+ freeCount);
+        if (freeCount<100){
+          for (var i = 16; i > 0; i--) {
+            var tempPlayer = addPlayer(0, leagueArrayComplete.key(), "team16", nextYear);//source,leagueName,teamName,year
+            console.log("added " +tempPlayer +" to free Agrents");
+          }
+        }
         fireRef.child('leagueArray').child(leagueArrayComplete.key()).update({currentDay : 1, year: nextYear, lastSim: +nextDay});
       }else if(nextDay.getDate() >3){
         console.log("not the first day of the month, and time for season sim.: "+ nextDay.getDate());
@@ -1454,45 +1479,80 @@ function runBlockChance(offP,defP, gameLength, ballPosition){
   }
 }
 //FUNCTION TO DROP PLAYER AND MOVE THEM TO THE FREE AGENT LIST
-function dropPlayer(){
+function dropPlayer(yearCheck){
+  var qVerify = true;
   if(typeof playerName == 'undefined'){window.location.assign("fbs3.html");}
-  var qVerify = confirm(playerName+" will be released to free agency?  Please note that your team will still be responsible for 77% of remaining contract.");
+  if (yearCheck){alert(playerName+"'s last year of his contract ended. He was released to free agency.");}
+  else{
+    qVerify = confirm(playerName+" will be released to free agency?  Please note that your team will still be responsible for 50% of remaining contract.");
+  }
   if(qVerify == true){
     console.log("player moved to freeagent team.");
     if(typeof leagueArrayComplete == 'object'){
       userLeagueName = leagueArrayComplete.key();
       if(typeof userArrayComplete == 'object'){userTeamName = (userArrayComplete.child("team").val()); console.log("used userArrayComplete.child");}
       else if(typeof userTeamName == 'string'){console.log("used userTeamName: "+ userTeamName);}
-      else{alert("ERROR 1316: team object not available."); return true;}
+      else{alert("ERROR 1471: team object not available."); return true;}
       var tempPlayer = leagueArrayComplete.child(userTeamName).child(playerName).val();
+      console.log("dropping "+leagueArrayComplete.child(userTeamName).child(playerName).key());
       fireRef.child("leagueArray").child(userLeagueName).child("team16").child(playerName).set(tempPlayer);
-      console.log(userTeamName);
+      fireRef.child("leagueArray").child(userLeagueName).child("team16").child(playerName).update({position1:"bench",position2:"bench",position3:"bench",contract: "Free Agent",contractLength:0});
+      for (var i = tempPlayer["contractLength"] -1; i >= 0; i--) {
+        var tempSalary = roundToTwo(tempPlayer["contract"] * 0.5);
+        var tempYear = leagueArrayComplete.child(userTeamName).child("tYear").val()+i;
+        console.log("changing the year "+tempYear+" by "+ tempSalary);
+        if(leagueArrayComplete.child(userTeamName).child(tempYear).val()){
+          console.log("tempYear found to be true: "+ leagueArrayComplete.child(userTeamName).child(tempYear).val());
+          tempSalary += leagueArrayComplete.child(userTeamName).child(tempYear).val();
+          console.log("update salary: "+tempSalary);
+        }
+        fireRef.child("leagueArray").child(userLeagueName).child(userTeamName).child(tempYear).set(tempSalary);
+      };
       fireRef.child("leagueArray").child(userLeagueName).child(userTeamName).child(playerName).remove();
       window.location.assign("fbs3.html");
-      //NEEDED :STILL HAVE TO ADJUST TEAM SALARY.
     }
     else{alert("ERROR 1325: league object not available.");}
   }
 }
-//FUNCTION TO sign PLAYER AND MOVE THEM TO THE FREE AGENT LIST
+//FUNCTION TO sign PLAYER AND MOVE THEM from THE FREE AGENT LIST if needed.
 function signPlayer(){
-  console.log("player signed to "+userTeamName);
+  var playerContract = $('#playerContractInput').val();
+  var playerLength = $('#playerLengthInput option:selected').index()+1;
+  console.log("upon sign player, playerContractInput value: "+ playerContract+" and length: "+playerLength);
   if(typeof playerName == 'undefined'){window.location.assign("freeagent.html");}
   var qVerify = confirm(playerName+" will be signed to your team?  Please note that your team will be responsible for the cost of this players contract.");
   if(qVerify == true){
-    console.log("player moved to your team.");
+    console.log("player signed to your team.");
     if(typeof leagueArrayComplete == 'object'){
       userLeagueName = leagueArrayComplete.key();
       if(storageType =="local"){ userTeamName = localStorage.localUserTeam; console.log("user team from local");}
       if(typeof userTeamName != 'string'){userTeamName = (userArrayComplete.child("team").val()); console.log("used userArrayComplete.child");}
-      var tempPlayer = leagueArrayComplete.child("team16").child(playerName).val();
-      fireRef.child("leagueArray").child(userLeagueName).child(userTeamName).child(playerName).set(tempPlayer);
-      fireRef.child("leagueArray").child(userLeagueName).child(userTeamName).child(playerName).update({position1:"bench",position2:"bench",position3:"bench"});
-      fireRef.child("leagueArray").child(userLeagueName).child("team16").child(playerName).remove();
-      window.location.assign("fbs3.html");
-      //NEEDED :STILL HAVE TO ADJUST TEAM SALARY.
+      var currentTeam, playerPresent;
+      leagueArrayComplete.child(userTeamName).forEach(function(nameSnap){
+        if (playerName == nameSnap.key()) {
+          playerPresent=true;
+          console.log("player found on your roster");
+          currentTeam = userTeamName;
+        }
+      });
+      if(!playerPresent){
+        currentTeam="team16";
+        console.log("player not present on user team. Changed to free agents.");
+      }
+      var tempPlayer = leagueArrayComplete.child(currentTeam).child(playerName).val();
+      playerContract =parseInt(playerContract);
+      userTeamSalary = parseInt(userTeamSalary);
+      console.log("the contract plus team salary: "+(playerContract+userTeamSalary));
+      if((playerContract+userTeamSalary)<= 130){
+        fireRef.child("leagueArray").child(userLeagueName).child(userTeamName).child(playerName).set(tempPlayer);
+        if(currentTeam == "team16"){
+          fireRef.child("leagueArray").child(userLeagueName).child("team16").child(playerName).remove();
+        }
+        fireRef.child("leagueArray").child(userLeagueName).child(userTeamName).child(playerName).update({contract:playerContract, contractLength:playerLength});
+        window.location.assign("fbs3.html");
+      }else{alert("Your team does not have enough cap room to sign this player.");}
     }
-    else{alert("ERROR 1347: league object not available.");}
+    else{alert("ERROR 1535: league object not available.");}
   }
 }
 //FUNCTION TO DESPLAY PLAYER DETAILS.
@@ -1528,13 +1588,15 @@ function playerGlance(){
     leagueArrayComplete.child(userTeamName).forEach(function(nameSnap){
       if (playerName == nameSnap.key()) {
         playerPresent=true; console.log("player found");
-        $('#addDropButton').text("Release Player").click(function(){dropPlayer()});
+        $('#addButton').text("Sign Player").click(function(){signPlayer();});
+        $('#dropButton').text("Release Player").click(function(){dropPlayer();});
       }
     });
     if(!playerPresent){
       userTeamName="team16";
       console.log("player not present on user team. Changed to free agents.");
-      $('#addDropButton').text("Sign Player").click(function(){signPlayer()});
+      $('#dropButton').css("display","none");
+      $('#addButton').text("Sign Player").click(function(){signPlayer();});
     }
     leagueArrayComplete.child(userTeamName).child(playerName).forEach(function(playerSnap) {
       if(typeof playerSnap.val() != "object"){
@@ -1549,6 +1611,16 @@ function playerGlance(){
           statInfo.push(statSnap.val());
         });
       }
+    });
+    var tempAvgTot = ((playerInfo[1]+playerInfo[2])/20);
+    console.log("players average of attribute vs potential divided by 10: "+playerInfo[1]+" "+playerInfo[2]+" "+ tempAvgTot);
+    var tempPow =tempAvgTot/4;
+    if(tempPow <1){tempPow =1;}
+    var tempContract = roundToTwo(Math.pow(tempAvgTot, tempPow));
+    $('#playerContractInput').val(tempContract).text("$"+tempContract+" mil./year");
+    $('#playerLengthInput').change(function(){
+      var updateContract = roundToTwo($('#playerLengthInput').val() * tempContract);
+      $('#playerContractInput').val(updateContract).text("$"+updateContract+" mil./year");
     });
     $('#playerGlance > tbody:last-child').append('<tr><td>'+playerName+'</td><td>'+playerAge+'</td><td>'+playerInfo[13]+"in."+'</td><td>'+playerInfo[2]+"/"+playerInfo[1]+'</td><td>'+playerInfo[21]+"/"+playerInfo[22]+'</td><td>'+playerInfo[8]+"/"+playerInfo[9]+'</td><td>'+playerInfo[4]+"/"+playerInfo[3]+'</td><td>'+playerInfo[20]+"/"+playerInfo[19]+'</td><td>'+playerInfo[23]+"/"+playerInfo[24]+'</td><td>'+playerInfo[12]+"/"+playerInfo[11]+'</td><td>'+playerInfo[25]+"/"+playerInfo[26]+'</td><td>'+playerInfo[5]+"/"+playerInfo[6]+'</td><td>'+playerInfo[14]+'</td></tr>');
     $('#statGlance > tbody:last-child').append('<tr><td>'+statInfo[0]+'</td><td>'+statInfo[1]+'</td><td>'+statInfo[2]+'</td><td>'+statInfo[3]+'</td><td>'+statInfo[4]+'</td><td>'+statInfo[5]+'</td><td>'+statInfo[6]+'</td><td>'+statInfo[7]+'</td><td>'+statInfo[8]+'</td><td>'+statInfo[9]+'</td><td>'+statInfo[10]+'</td></tr>');
@@ -1657,4 +1729,30 @@ function depthChange(selectPlayer, location, depthPos){
 //SIMPLE FUNCTION TO ROUND DECIMAL NUMBERS TO 2 PLACES.
 function roundToTwo(num) {
     return +(Math.round(num + "e+2")  + "e-2");
+}
+function salaryGlance(teamName){
+  console.log ("salaryGlance initiated: " +teamName);
+  if (typeof leagueArrayComplete!= "object"){
+    console.log("salary glance: league array did not exist locally: ");
+  }else{
+    $('#teamSalary > tbody').html('');
+    var salaryCur =0;
+    var salaryPen=0;
+    leagueArrayComplete.child(teamName).forEach(function(playerSnap) {
+      if(typeof playerSnap.val() == "object" && playerSnap.key() != "stats" && playerSnap.key()!= "statTotal"){
+        salaryCur += playerSnap.child("contract").val();
+      }
+      else if(leagueArrayComplete.child(teamName).child("tYear").val() == playerSnap.key()){
+        salaryPen += playerSnap.val();
+      }
+    });
+    userTeamSalary = salaryCur+salaryPen;
+    if(storageType =="local"){
+        localStorage.localUserSalary = userTeamSalary;
+      }
+      if(storageType=="cookie"){
+        Cookies.set('userSalaryCookie', userTeamSalary);
+      }
+    $('#teamSalary > tbody:last-child').append('<tr><td>'+(salaryCur+salaryPen)+'</td><td> 130.00 </td><td>'+salaryPen+'</td><td>'+salaryCur+'</td></tr>');
+  }
 }
