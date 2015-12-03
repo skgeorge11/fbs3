@@ -42,22 +42,11 @@ if(navigator.cookieEnabled && storageType != "file") {
     userPassword = localStorage.localUserPassword;
     userLeagueName = localStorage.localUserLeague;
     userTeamName = localStorage.localUserTeam;
-    // leagueArrayComplete = localStorage.localLeagueArray;
-    // var retrievedObject = localStorage.getItem('localUserArray');
-    // userArrayComplete = JSON.parse(retrievedObject);
-    // console.log(userArrayComplete);
-    //userArrayComplete = localStorage.localUserArray;
     console.log("user variables taken from localStorage: "+userId);
   }
 
 
 //CALLED FUNCTIONS BELOW
-
-function timeStamp(){
-  var tempTime = new Date();
-  fireRef.child("leagueArray").child("league2").child("lastSim").set(+tempTime);
-  console.log("lastSim set to current time: " +(+tempTime));
-}
 
 //RETRIEVE PROMISE USER DATA FROM FIREBASE ARRAY
 function userPromiseData(user){
@@ -72,6 +61,8 @@ function userPromiseData(user){
 }
 //USERID AND PASSWORD INFO IS CHECKED AGAINST FIREBASE
 function checkPassword(origin){
+  var d = new Date();
+  var miliTime = +d;
   console.log("user id is: "+userId);
   var userIdPromise = userPromiseData(userId);
   userIdPromise.done(function(userSnap){
@@ -79,8 +70,7 @@ function checkPassword(origin){
       console.log("userId did not exist on firebase.");
       if (origin === "createUser"){
         console.log("created new user.")
-        var d = new Date();
-        fireRef.child('userArray').child(userId).set({password : userPassword, login: d});
+        fireRef.child('userArray').child(userId).set({password : userPassword, login: miliTime});
         localStorage.localUserId = userId;
         localStorage.localUserPassword = userPassword;
         window.location.assign("fbs3.html");
@@ -97,6 +87,7 @@ function checkPassword(origin){
       Cookies.set('userPasswordCookie', userPassword);
       Cookies.set('userIdCookie', userId);
       if(window.location.origin != "file://"){console.log("cookie written: "+Cookies.get('userArrayCookie'));}
+      fireRef.child('userArray').child(userId).update({login: miliTime});
       window.location.assign("fbs3.html");
     }
     else{

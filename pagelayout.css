@@ -113,7 +113,7 @@ table th    {
     background-color: black;
     color: white;
 }
-table tr:hover{
+table[id = "teamGlance"] tr:hover{
     background-color: yellow;
     cursor: cell;
 }
